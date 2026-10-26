@@ -330,8 +330,14 @@ Décisions prises en cours de route, avec leur raison. À lire avant de « corri
 - image Docker : 229 Mo, utilisateur non-root (uid 1001), healthcheck `healthy`,
   `/admin/index` renvoie bien 307 vers `/login`
 - migrations rejouables depuis zéro (`migrate reset`) et via la cible `migrator`
+- **pile de production validée localement** (`docker-compose.prod.yml`) : base
+  vierge → 3 migrations → app saine, inscription réelle effectuée dans le
+  conteneur, `/admin/index` en 307, en-têtes de sécurité présents
 
 ### Reste à faire
 
-- **Déploiement Dokploy** : bloqué faute d'accès (URL de l'instance, projet, domaine de staging).
+- **Déploiement Dokploy** : bloqué faute d'accès (URL de l'instance, projet,
+  domaine de staging). Tout le reste est prêt : `.env.stack.example`,
+  `docker-compose.prod.yml` (migrations en service séparé) et le guide
+  `docs/deploiement.md`.
 - Pousser le dépôt sur GitHub pour que la CI s'exécute réellement (le workflow est écrit mais n'a encore tourné que localement).

@@ -58,6 +58,18 @@ développement, d'où des ports décalés — à garder cohérents avec `.env`.
 | `pnpm db:seed` | données de démonstration (idempotent) |
 | `pnpm db:studio` | Prisma Studio |
 
+## Déploiement
+
+```bash
+cp .env.stack.example .env.stack      # puis AUTH_SECRET et POSTGRES_PASSWORD
+docker compose -f docker-compose.prod.yml --env-file .env.stack up -d --build
+curl http://localhost:3212/api/health
+```
+
+C'est la répétition exacte de la production (même image, mêmes migrations,
+même ordre de démarrage). Guide complet, dont la configuration Dokploy :
+[`docs/deploiement.md`](docs/deploiement.md).
+
 ## Structure
 
 ```

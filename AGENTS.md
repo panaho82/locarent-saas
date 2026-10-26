@@ -135,6 +135,26 @@ via `db.tenant.findUnique({ where: { id: requireTenantId() } })`.
 - Le test `tenancy.test.ts` est un garde-fou de conception : s'il tombe, c'est
   que la couche de données n'est plus sûre.
 
+## Pièges de configuration
+
+### `.env.production` est réservé par Next
+
+Next charge automatiquement `.env`, `.env.local`, `.env.production` (et
+`.env.development`) selon `NODE_ENV`. Un fichier `.env.production` à la racine
+**écrase la configuration du serveur**, y compris pendant `pnpm preview` : c'est
+arrivé, et les liens d'invitation pointaient vers un conteneur éteint.
+
+- Le fichier d'environnement de la pile Docker s'appelle **`.env.stack`**
+  (`docker-compose.prod.yml --env-file .env.stack`).
+- Ne jamais créer de `.env.production` à la racine du dépôt.
+
+### Le build recopie les fichiers `.env`
+
+`next build` copie les `.env` dans `.next/standalone/`. Ne jamais publier ce
+dossier tel quel ; l'image Docker l'évite via `.dockerignore` (`.env*` exclus).
+Après un build local fait avec un `.env` inattendu, `rm -rf .next` avant de
+reconstruire.
+
 ## Authentification et autorisations
 
 - Mots de passe : Argon2id (`src/server/auth/password.ts`). Ne jamais comparer
