@@ -60,8 +60,8 @@ développement, d'où des ports décalés — à garder cohérents avec `.env`.
 
 ## Déploiement
 
-**Staging en ligne : https://staging.locarent.uk** (Dokploy, certificat
-Let's Encrypt). Voir [`docs/deploiement.md`](docs/deploiement.md) § 5 pour le
+**Staging en ligne : https://v2.locarent.uk** (Dokploy, projet dédié
+« locarent saas v2 »). Voir [`docs/deploiement.md`](docs/deploiement.md) § 5 pour le
 détail et la procédure de redéploiement.
 
 ```bash

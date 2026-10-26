@@ -114,38 +114,66 @@ couverts par `tests/e2e/auth.spec.ts`.
 | Élément | Valeur |
 |---|---|
 | Instance Dokploy | `https://dokploy.tahiti-iotservices.cloud` |
-| Projet | `locarent` (environnement `production`) |
-| Application | compose **`locarent-saas`** — `uEMz95BWn-tCEC4T27Zdq` |
+| Projet Dokploy | **`locarent saas v2`** (`7WHjlULLsXzwP_m9nT239`) |
+| Application | compose **`locarent-saas-v2`** — `pdqHP8jxb07WTigap3Fu-` |
 | Dépôt source | `panaho82/locarent-saas`, branche `main`, `./docker-compose.prod.yml` |
-| URL | **https://staging.locarent.uk** |
-| Domaine → service | `app`, port `3000`, HTTPS Let's Encrypt |
-| Santé | `/api/health` → `{"status":"ok","database":"up"}` |
+| URL | **https://v2.locarent.uk** |
+| Domaine → service | `app`, port `3000`, HTTPS |
+| Santé | `/api/health` → `{"status":"ok","database":"up","latencyMs":…}` |
 
-⚠️ **`app.locarent.uk` n'est pas ce déploiement.** Ce domaine sert une autre
-application Locarent (dépôt `panaho82/car-rental-saas`, MySQL/MinIO/Resend),
-en production. Elle n'a **pas été modifiée**. Le socle du Lot 0 vit sur
-`staging.locarent.uk`, qui est un simple sous-domaine (le DNS `*.locarent.uk`
-pointe déjà vers le serveur).
+### Isolation vis-à-vis de la production — à ne pas casser
 
-### Vérifications faites sur le staging
+`app.locarent.uk` sert une **autre application** (dépôt `panaho82/car-rental-saas`,
+MySQL + MinIO + Resend), utilisée par des agences. Elle est en production et ne
+doit pas être touchée.
 
-- certificat Let's Encrypt valide ;
-- `/api/health` à 200 avec base joignable ;
+| | Production | Lot 0 (v2) |
+|---|---|---|
+| Projet Dokploy | `locarent` | `locarent saas v2` |
+| Application | `locarent` (`B1SX-UYq…`) | `locarent-saas-v2` (`pdqHP8j…`) |
+| Conteneurs | app, minio, mysql… | app, postgres, migrate |
+| Base | MySQL, son volume | PostgreSQL, **son volume** |
+| Signatures `/api/health` | `{"status":"healthy","database":"connected"}` | `{"status":"ok","database":"up"}` |
+
+⚠️ **Piège durable** : la production déclare un domaine **joker**
+`*.locarent.uk → app:3000`. Tout sous-domaine non déclaré ailleurs retombe donc
+sur elle. C'est pourquoi `v2.locarent.uk` doit garder sa règle d'hôte exacte
+dans Dokploy : elle est plus spécifique que le joker et prend le dessus.
+
+Conséquence pratique : si l'application v2 est arrêtée, `v2.locarent.uk` affiche
+**la production**, sans erreur. Toujours vérifier la signature de
+`/api/health` avant de conclure qu'on regarde le bon environnement.
+
+### Incident du 26/10 (à ne pas reproduire)
+
+Un premier déploiement avait été fait dans le projet `locarent`, c'est-à-dire
+mêlé à l'application de production, sous `staging.locarent.uk`. Techniquement
+séparé (autres conteneurs, autre base), mais mal placé : même projet Dokploy,
+et un domaine posé au-dessus du joker de production. L'application a été
+arrêtée puis **supprimée**, et le déploiement refait dans un projet dédié.
+
+Règle qui en découle : **ne jamais créer d'application dans le projet Dokploy
+d'une production existante**, même « juste pour tester ».
+
+### Vérifications faites sur v2
+
+- `/api/health` renvoie bien la signature du Lot 0 (et non celle de la production) ;
 - `/admin/index` sans session → 307 vers `/login` ;
-- inscription réelle dans un navigateur → tableau de bord, cookie
-  `httpOnly` **et `secure`** (HTTPS), `SameSite=Lax` ;
-- écran Équipe accessible au propriétaire.
+- inscription réelle dans un navigateur → tableau de bord, cookie `httpOnly` +
+  `secure`, `SameSite=Lax` ;
+- écran Équipe accessible au propriétaire ;
+- production toujours à 200 sur `/`, `/login`, `/api/health`.
 
-Un compte de vérification (`verif-…@locarent.test`) subsiste sur le staging :
-il n'existe pas d'écran de suppression d'agence au Lot 0.
+### DNS
 
-### Redéployer
+`*.locarent.uk` est déjà un joker DNS-only vers `62.146.172.163` : `v2.locarent.uk`
+résout donc sans enregistrement dédié. Pour rendre le sous-domaine explicite et
+indépendant du joker, créer dans Cloudflare :
 
-```bash
-# depuis l'interface Dokploy : application locarent-saas → Deploy
-# ou par API :
-curl -X POST "$DOKPLOY/api/trpc/compose.deploy" \
-  -u "$BASIC_AUTH" -H "x-api-key: $DOKPLOY_KEY" \
-  -H "content-type: application/json" \
-  -d '{"json":{"composeId":"uEMz95BWn-tCEC4T27Zdq"}}'
+```
+Type    : A
+Nom     : v2
+Contenu : 62.146.172.163
+Proxy   : DNS only (nuage gris)   ← obligatoire pour Let's Encrypt HTTP-01
+TTL     : Auto
 ```
