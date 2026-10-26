@@ -52,15 +52,27 @@ services:
       context: .
       target: runner
     restart: unless-stopped
-    env_file:
-      - .env.stack
+    # Aucun `env_file` : les variables viennent du contexte d'interpolation
+    # (--env-file en local, interface Dokploy sur le serveur). Un env_file
+    # obligatoire ferait échouer le déploiement, puisque le fichier n'existe
+    # pas dans le dépôt.
     environment:
       NODE_ENV: production
       PORT: "3000"
       HOSTNAME: 0.0.0.0
       DATABASE_URL: postgresql://${POSTGRES_USER:-locarent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est requis}@postgres:5432/${POSTGRES_DB:-locarent}?schema=public
+      APP_URL: ${APP_URL:?APP_URL est requis (URL publique, sert aux liens d'invitation)}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET est requis (openssl rand -base64 48)}
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-console}
+      MAIL_FROM: ${MAIL_FROM:-Locarent <no-reply@locarent.test>}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    # Sur Dokploy, Traefik joint le conteneur par le réseau interne : ce
+    # port publié ne sert qu'à la vérification locale.
     ports:
-      - "3212:3000"
+      - "${APP_HOST_PORT:-3212}:3000"
     depends_on:
       postgres:
         condition: service_healthy

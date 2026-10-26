@@ -29,8 +29,14 @@ docker compose -f docker-compose.prod.yml --env-file .env.stack down -v
 Ordre garanti par Compose : `postgres` (healthy) → `migrate` (une fois) →
 `app` (démarre seulement si les migrations ont réussi).
 
-> `--env-file` est nécessaire : les variables `POSTGRES_*` servent à la fois à
-> l'interpolation Compose et au conteneur applicatif.
+> `--env-file` sert uniquement à l'interpolation Compose. Le service `app` n'a
+> **aucun `env_file`** : toutes les variables lui sont passées explicitement,
+> ce qui permet à Dokploy de les injecter depuis son interface sans qu'un
+> fichier existe sur le serveur.
+
+Le déploiement échoue **immédiatement et clairement** si `POSTGRES_PASSWORD`,
+`AUTH_SECRET` ou `APP_URL` manquent (syntaxe `${VAR:?message}`), plutôt que de
+démarrer une application à moitié configurée.
 
 ## 3. Dokploy
 
@@ -52,7 +58,11 @@ POSTGRES_PASSWORD=<fort, 32+ caractères>
 AUTH_SECRET=<openssl rand -base64 48>
 APP_URL=https://app.<votre-domaine>
 MAIL_TRANSPORT=console        # passer à smtp quand le transport sera branché
+APP_HOST_PORT=3212            # port publié, seulement utile hors Traefik
 ```
+
+Les trois premières sont **obligatoires** : sans elles, `docker compose` refuse
+de démarrer et nomme la variable manquante.
 
 `DATABASE_URL` n'est **pas** à saisir : le compose la construit à partir des
 variables `POSTGRES_*` et du nom de service `postgres`.
@@ -73,6 +83,10 @@ variables `POSTGRES_*` et du nom de service `postgres`.
    plusieurs réplicas ne demande aucune modification (sessions en base).
 5. **`APP_URL`** doit être l'URL publique réelle : elle sert à construire les
    liens d'invitation et de réinitialisation envoyés par email.
+6. **Port publié** : sur Dokploy, Traefik joint le conteneur par le réseau
+   interne, le mapping `${APP_HOST_PORT}:3000` n'est pas nécessaire. Le laisser
+   par défaut est inoffensif si le port 3212 est libre sur l'hôte ; sinon, le
+   changer ou supprimer la ligne `ports`.
 
 ### 3.4 Après le déploiement
 
