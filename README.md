@@ -60,6 +60,10 @@ développement, d'où des ports décalés — à garder cohérents avec `.env`.
 
 ## Déploiement
 
+**Staging en ligne : https://staging.locarent.uk** (Dokploy, certificat
+Let's Encrypt). Voir [`docs/deploiement.md`](docs/deploiement.md) § 5 pour le
+détail et la procédure de redéploiement.
+
 ```bash
 cp .env.stack.example .env.stack      # puis AUTH_SECRET et POSTGRES_PASSWORD
 docker compose -f docker-compose.prod.yml --env-file .env.stack up -d --build

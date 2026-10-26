@@ -106,3 +106,46 @@ couverts par `tests/e2e/auth.spec.ts`.
 | Stockage S3/MinIO des photos | 3 |
 | Paiement PayZen | 5 |
 | Sauvegarde et supervision (Sentry) | 7 |
+
+---
+
+## 5. Déploiement effectué (Lot 0)
+
+| Élément | Valeur |
+|---|---|
+| Instance Dokploy | `https://dokploy.tahiti-iotservices.cloud` |
+| Projet | `locarent` (environnement `production`) |
+| Application | compose **`locarent-saas`** — `uEMz95BWn-tCEC4T27Zdq` |
+| Dépôt source | `panaho82/locarent-saas`, branche `main`, `./docker-compose.prod.yml` |
+| URL | **https://staging.locarent.uk** |
+| Domaine → service | `app`, port `3000`, HTTPS Let's Encrypt |
+| Santé | `/api/health` → `{"status":"ok","database":"up"}` |
+
+⚠️ **`app.locarent.uk` n'est pas ce déploiement.** Ce domaine sert une autre
+application Locarent (dépôt `panaho82/car-rental-saas`, MySQL/MinIO/Resend),
+en production. Elle n'a **pas été modifiée**. Le socle du Lot 0 vit sur
+`staging.locarent.uk`, qui est un simple sous-domaine (le DNS `*.locarent.uk`
+pointe déjà vers le serveur).
+
+### Vérifications faites sur le staging
+
+- certificat Let's Encrypt valide ;
+- `/api/health` à 200 avec base joignable ;
+- `/admin/index` sans session → 307 vers `/login` ;
+- inscription réelle dans un navigateur → tableau de bord, cookie
+  `httpOnly` **et `secure`** (HTTPS), `SameSite=Lax` ;
+- écran Équipe accessible au propriétaire.
+
+Un compte de vérification (`verif-…@locarent.test`) subsiste sur le staging :
+il n'existe pas d'écran de suppression d'agence au Lot 0.
+
+### Redéployer
+
+```bash
+# depuis l'interface Dokploy : application locarent-saas → Deploy
+# ou par API :
+curl -X POST "$DOKPLOY/api/trpc/compose.deploy" \
+  -u "$BASIC_AUTH" -H "x-api-key: $DOKPLOY_KEY" \
+  -H "content-type: application/json" \
+  -d '{"json":{"composeId":"uEMz95BWn-tCEC4T27Zdq"}}'
+```
