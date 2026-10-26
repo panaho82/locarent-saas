@@ -169,8 +169,21 @@ describe("isolation multi-tenant", () => {
   });
 
   it("laisse les référentiels globaux accessibles hors contexte", async () => {
-    await expect(db.plan.findMany()).resolves.toBeDefined();
-    await expect(db.brand.count()).resolves.toBeGreaterThan(0);
+    // Fixture propre : ce test ne doit pas dépendre du seed (la CI de qualité
+    // ne sème pas, elle vérifie que le dépôt tient tout seul).
+    const brand = await prisma.brand.create({
+      data: { name: `Marque ${suffix}`, slug: `marque-test-${suffix}` },
+    });
+
+    try {
+      const found = await db.brand.findUnique({ where: { slug: brand.slug } });
+      expect(found?.id).toBe(brand.id);
+      // Les référentiels globaux restent lisibles sans contexte d'agence.
+      await expect(db.plan.findMany()).resolves.toBeInstanceOf(Array);
+      await expect(db.color.count()).resolves.toBeGreaterThanOrEqual(0);
+    } finally {
+      await prisma.brand.delete({ where: { id: brand.id } });
+    }
   });
 
   it("le client brut (`prisma`) n'est pas filtré — c'est pourquoi il est réservé au CLI", async () => {

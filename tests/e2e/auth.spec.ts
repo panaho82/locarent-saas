@@ -131,21 +131,28 @@ test("garde d'accès : un visiteur non connecté est renvoyé vers la connexion"
   await context.close();
 });
 
-test("connexion et déconnexion avec le compte de démonstration", async ({
+test("connexion et déconnexion avec un compte fraîchement créé", async ({
   page,
 }) => {
-  await page.goto("/login");
-  await page.fill("#email", "demo@locarent.test");
-  await page.fill("#password", "locarent-demo-1");
-  await page.getByRole("button", { name: "Se connecter" }).click();
+  // Compte créé par le test lui-même : aucun parcours ne dépend du seed.
+  const id = unique("login");
+  const email = `e2e-${id}@locarent.test`;
 
+  await register(page, email, `Agence ${id}`);
   await expect(page).toHaveURL(/\/admin\/index$/);
+
   await page.getByRole("button", { name: "Déconnexion" }).click();
   await expect(page).toHaveURL(/\/login/);
 
   // Après déconnexion, revenir sur /admin ne rouvre pas la session.
   await page.goto("/admin/index");
   await expect(page).toHaveURL(/\/login/);
+
+  // Reconnexion avec les mêmes identifiants.
+  await page.fill("#email", email);
+  await page.fill("#password", password);
+  await page.getByRole("button", { name: "Se connecter" }).click();
+  await expect(page).toHaveURL(/\/admin\/index$/);
 });
 
 test("mauvais mot de passe : message générique, pas d'énumération", async ({

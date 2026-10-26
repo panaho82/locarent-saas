@@ -114,9 +114,6 @@ jobs:
       - name: Appliquer les migrations
         run: pnpm prisma migrate deploy
 
-      - name: Données de démonstration
-        run: pnpm db:seed
-
       - name: Build de production
         run: pnpm build
 
