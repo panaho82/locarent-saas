@@ -1,0 +1,10 @@
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
+
+# pnpm 10 bloque les scripts postinstall par défaut.
+# esbuild est requis par tsx (scripts CLI), prisma par le CLI de migration.
+onlyBuiltDependencies:
+  - esbuild
+  - prisma
+  - "@prisma/engines"

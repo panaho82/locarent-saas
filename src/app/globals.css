@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/*
+ * Design system — dérivé de spec/07-design-system.md (relevé sur l'app d'origine).
+ * Tokens exposés comme utilitaires Tailwind 4 : bg-brand, text-ink, border-line…
+ */
+@theme {
+  /* Marque */
+  --color-brand: #ffa633;
+  --color-brand-dark: #f7941d;
+  --color-brand-soft: #fff4e6;
+
+  /* Texte */
+  --color-ink: #111827;
+  --color-body: #6d777f;
+  --color-muted: #98a2b3;
+
+  /* Surfaces */
+  --color-app: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-line: #e5e7eb;
+
+  /* États */
+  --color-success: #198754;
+  --color-info: #0dcaf0;
+  --color-warning: #f59e0b;
+  --color-danger: #dc3545;
+  --color-violet: #7c3aed;
+  --color-planning: #1f2937;
+
+  /* Formes (spec 07 : cartes 10 px, boutons 8 px) */
+  --radius-card: 10px;
+  --radius-btn: 8px;
+
+  /* Layout */
+  --spacing-sidebar: 240px;
+  --spacing-header: 72px;
+
+  /* Typographie — Albert Sans est injectée par next/font dans layout.tsx */
+  --font-sans: var(--font-albert-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Contrastes : le orange #FFA633 ne doit jamais servir de couleur de texte
+   sur fond blanc (ratio ≈ 2:1). En texte, utiliser --color-brand-dark. */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-app);
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus visible partout (accessibilité, spec 07). */
+:focus-visible {
+  outline: 2px solid var(--color-brand-dark);
+  outline-offset: 2px;
+}

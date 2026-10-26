@@ -1,0 +1,85 @@
+# Services de développement de Locarent.
+#
+# Ports hôtes volontairement décalés : les ports 3000 / 5432 / 9000 / 8025 sont
+# déjà occupés sur cette machine par d'autres projets.
+#
+#   PostgreSQL  → localhost:55432
+#   MinIO (S3)  → localhost:59000 (API) / localhost:59001 (console)
+#   Mailpit     → localhost:58125 (SMTP) / localhost:58025 (interface web)
+#
+# Démarrage : docker compose up -d
+
+name: locarent
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: locarent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: locarent
+      POSTGRES_PASSWORD: locarent_dev
+      POSTGRES_DB: locarent
+      # Collation explicite : l'app trie des noms polynésiens (accents, apostrophes).
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+      TZ: Pacific/Tahiti
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U locarent -d locarent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    container_name: locarent-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: locarent
+      MINIO_ROOT_PASSWORD: locarent_dev_secret
+    ports:
+      - "59000:9000"
+      - "59001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Crée le bucket au premier démarrage puis s'arrête.
+  minio-init:
+    image: minio/mc:latest
+    container_name: locarent-minio-init
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 locarent locarent_dev_secret; do sleep 1; done;
+      mc mb --ignore-existing local/locarent-dev;
+      mc anonymous set none local/locarent-dev;
+      echo 'bucket locarent-dev prêt';
+      "
+    restart: "no"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: locarent-mailpit
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      TZ: Pacific/Tahiti
+    ports:
+      - "58125:1025"
+      - "58025:8025"
+
+volumes:
+  postgres-data:
+  minio-data:
