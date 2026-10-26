@@ -100,8 +100,10 @@ via `db.tenant.findUnique({ where: { id: requireTenantId() } })`.
   `formatXPF(6630)` → `6 630 XPF`.
 - **Dates** : `Pacific/Tahiti` (UTC-10). Jamais de `new Date()` nu pour
   afficher ; passer par les helpers de `src/lib/format.ts`.
-- **Langue** : interface 100 % en français. Textes centralisés dans
-  `src/i18n/fr.ts`, pas de framework i18n pour l'instant.
+- **Langue** : interface 100 % en français. Les textes sont **inline** dans les
+  composants pour l'instant — pas de fichier de traduction ni de framework i18n.
+  Si l'anglais public devient nécessaire, introduire un dictionnaire à ce
+  moment-là, pas avant.
 - **Heures de réservation** : `start_time` / `end_time` sont des chaînes
   `"08:00"` (pas des `DateTime`) — évite les dates fantômes du type
   1970-01-01.
