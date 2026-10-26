@@ -82,7 +82,7 @@ export function LoginForm({ notice }: { notice?: string }) {
       <div className="flex justify-end">
         <Link
           href="/forgot-password"
-          className="text-[13px] font-medium text-brand-dark hover:underline"
+          className="text-[13px] font-medium text-brand-text hover:underline"
         >
           Mot de passe oublié ?
         </Link>
@@ -92,7 +92,7 @@ export function LoginForm({ notice }: { notice?: string }) {
 
       <p className="text-center text-[13px] text-muted">
         Pas encore de compte ?{" "}
-        <Link href="/register" className="font-medium text-brand-dark hover:underline">
+        <Link href="/register" className="font-medium text-brand-text hover:underline">
           Créer une agence
         </Link>
       </p>
@@ -179,7 +179,7 @@ export function RegisterForm() {
 
       <p className="text-center text-[13px] text-muted">
         Déjà un compte ?{" "}
-        <Link href="/login" className="font-medium text-brand-dark hover:underline">
+        <Link href="/login" className="font-medium text-brand-text hover:underline">
           Se connecter
         </Link>
       </p>
@@ -211,7 +211,7 @@ export function ForgotPasswordForm() {
       <SubmitButton>Recevoir un lien</SubmitButton>
 
       <p className="text-center text-[13px] text-muted">
-        <Link href="/login" className="font-medium text-brand-dark hover:underline">
+        <Link href="/login" className="font-medium text-brand-text hover:underline">
           Retour à la connexion
         </Link>
       </p>

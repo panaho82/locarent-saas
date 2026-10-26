@@ -245,7 +245,7 @@ export function TeamManager({
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {canEdit ? (
                     <details className="w-full">
-                      <summary className="cursor-pointer text-[12px] font-medium text-brand-dark">
+                      <summary className="cursor-pointer text-[12px] font-medium text-brand-text">
                         Modifier le rôle et les permissions
                       </summary>
                       <form action={editAction} className="mt-3 space-y-3">

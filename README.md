@@ -97,7 +97,8 @@ docs/              specs d'analyse + schema.sql + plan des lots
 - [ ] Déploiement Dokploy (en attente d'accès)
 
 Vérifications : `pnpm test` (17 tests d'intégration) et `pnpm exec playwright test`
-(6 parcours réels sur le serveur standalone).
+(8 parcours réels sur le serveur standalone, dont un audit d'accessibilité axe
+sur les écrans publics et d'administration).
 
 ## Crédits & licence
 

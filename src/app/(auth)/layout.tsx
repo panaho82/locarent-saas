@@ -45,7 +45,7 @@ export default function AuthLayout({
           className="absolute -bottom-32 -left-16 size-80 rounded-full bg-brand/10"
         />
         <div className="relative flex h-full flex-col justify-center px-14">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-dark">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-text">
             Polynésie française
           </p>
           <h2 className="mt-4 max-w-md text-3xl font-bold leading-tight text-ink">

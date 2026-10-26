@@ -126,6 +126,24 @@ via `db.tenant.findUnique({ where: { id: requireTenantId() } })`.
 - Toute migration doit être rejouable : `pnpm db:reset` doit fonctionner après
   un `git clone`.
 
+## Accessibilité (exigence de la spec 07)
+
+Le produit d'origine a des contrastes insuffisants ; la refonte doit viser
+**4.5:1** pour le texte courant. Valeurs vérifiées :
+
+| Token | Valeur | Sur fond app | Usage |
+|---|---|---|---|
+| `--color-body` | `#666F77` | 4.85:1 | texte courant |
+| `--color-muted` | `#667085` | 4.72:1 | libellés, hints, métadonnées |
+| `--color-brand-text` | `#B45309` | 4.76:1 | liens et titres accentués |
+
+Règles :
+- `--color-brand` (#FFA633) et `--color-brand-dark` (#F7941D) servent de
+  **fond** ou de bordure, **jamais** de couleur de texte sur fond clair
+  (2.0:1 et 2.3:1). Pour du texte : `text-brand-text`.
+- `tests/e2e/accessibilite.spec.ts` échoue sur toute violation axe de gravité
+  `serious` ou `critical`. Ne pas le désactiver pour faire passer une PR.
+
 ## Tests
 
 - `tests/integration/` : vraie base Postgres, fixtures créées puis supprimées.

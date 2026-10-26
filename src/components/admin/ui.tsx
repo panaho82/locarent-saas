@@ -103,7 +103,7 @@ export function EmptyState({
     <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
       <div
         aria-hidden
-        className="mb-3 flex size-11 items-center justify-center rounded-full bg-brand-soft text-brand-dark"
+        className="mb-3 flex size-11 items-center justify-center rounded-full bg-brand-soft text-brand-text"
       >
         <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden>
           <path

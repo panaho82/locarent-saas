@@ -34,7 +34,7 @@ export default async function AcceptInvitePage({
         <p className="mt-6 text-center text-[13px]">
           <Link
             href="/login"
-            className="font-medium text-brand-dark hover:underline"
+            className="font-medium text-brand-text hover:underline"
           >
             Aller à la connexion
           </Link>

@@ -9,11 +9,13 @@
   --color-brand: #ffa633;
   --color-brand-dark: #f7941d;
   --color-brand-soft: #fff4e6;
+  /* Orange utilisable EN TEXTE : #f7941d ne donne que 2.3:1 sur blanc. */
+  --color-brand-text: #b45309;
 
   /* Texte */
   --color-ink: #111827;
-  --color-body: #6d777f;
-  --color-muted: #98a2b3;
+  --color-body: #666f77;
+  --color-muted: #667085;
 
   /* Surfaces */
   --color-app: #f8f9fa;
@@ -40,8 +42,12 @@
   --font-sans: var(--font-albert-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Contrastes : le orange #FFA633 ne doit jamais servir de couleur de texte
-   sur fond blanc (ratio ≈ 2:1). En texte, utiliser --color-brand-dark. */
+/* Contrastes (WCAG AA, 4.5:1 pour le texte courant) :
+   · #FFA633 et #F7941D ne servent JAMAIS de couleur de texte sur fond clair
+     (2.0 et 2.3:1) — en texte, utiliser --color-brand-text (#B45309, 5.0:1) ;
+   · --color-body = 4.85:1 sur le fond gris de l'admin ;
+   · --color-muted = 4.97:1.
+   Ces valeurs sont vérifiées automatiquement par tests/e2e/accessibilite.spec.ts. */
 
 html,
 body {

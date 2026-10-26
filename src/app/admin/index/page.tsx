@@ -111,7 +111,7 @@ export default async function DashboardPage() {
                 {step.done ? "✓" : index + 1}
               </span>
               {step.href ? (
-                <Link href={step.href} className="text-brand-dark hover:underline">
+                <Link href={step.href} className="text-brand-text hover:underline">
                   {step.label}
                 </Link>
               ) : (

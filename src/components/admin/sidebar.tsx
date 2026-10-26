@@ -158,7 +158,7 @@ export function Sidebar({ tenantName }: { tenantName: string }) {
                       <Icon
                         className={cn(
                           "size-4 shrink-0",
-                          active ? "text-brand-dark" : "text-muted",
+                          active ? "text-brand-text" : "text-muted",
                         )}
                       />
                       <span className="truncate">{item.label}</span>
