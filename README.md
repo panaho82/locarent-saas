@@ -47,7 +47,9 @@ développement, d'où des ports décalés — à garder cohérents avec `.env`.
 | Commande | Effet |
 |---|---|
 | `pnpm dev` | serveur de développement |
-| `pnpm build` / `pnpm start` | build de production |
+| `pnpm build` | build de production |
+| `pnpm preview` | sert le build standalone sur le port 3210 (le même serveur que l'image Docker) |
+| `pnpm exec playwright test` | parcours end-to-end dans Chromium |
 | `pnpm typecheck` | TypeScript strict, sans émission |
 | `pnpm lint` | ESLint |
 | `pnpm test` | tests Vitest (dont l'isolation multi-tenant) |
@@ -75,10 +77,15 @@ docs/              specs d'analyse + schema.sql + plan des lots
 - [x] Seed idempotent (3 plans, 12 couleurs, 12 marques, agence de démo)
 - [x] Isolation multi-tenant garantie par extension Prisma + `AsyncLocalStorage`,
       prouvée par 8 tests d'intégration
-- [ ] Authentification (Argon2id, sessions, invitations)
-- [ ] Permissions granulaires (40+) et écran Équipe
-- [ ] Layout admin complet
-- [ ] CI, image Docker, déploiement Dokploy
+- [x] Authentification maison : Argon2id, sessions en base (token haché),
+      cookie httpOnly, mot de passe oublié, invitations
+- [x] Permissions granulaires (53) et écran Équipe
+- [x] Layout admin (sidebar 5 sections, header, tableau de bord, réglages)
+- [x] CI GitHub Actions, image Docker standalone (229 Mo, non-root)
+- [ ] Déploiement Dokploy (en attente d'accès)
+
+Vérifications : `pnpm test` (17 tests d'intégration) et `pnpm exec playwright test`
+(6 parcours réels sur le serveur standalone).
 
 ## Crédits & licence
 

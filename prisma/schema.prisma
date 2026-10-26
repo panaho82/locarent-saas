@@ -403,6 +403,7 @@ model User {
   mobileDevices   MobileDevice[]
   qrTokens        QrToken[]
   sessions        Session[]
+  passwordResetTokens PasswordResetToken[]
   bookingsCreated Booking[]        @relation("BookingCreatedBy")
   inspectionsDone Inspection[]     @relation("InspectionCompletedBy")
   paymentsMade    Payment[]        @relation("PaymentRecordedBy")
@@ -511,10 +512,27 @@ model Session {
   @@map("sessions")
 }
 
+/// Réinitialisation de mot de passe. Absente du schéma d'origine (Laravel
+/// utilisait sa table interne) ; nécessaire pour un flux « mot de passe
+/// oublié » sans stocker de token en clair.
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  /// SHA-256 du token envoyé par email
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
 // -----------------------------------------------------------------------------
 //  RÉGLAGES (1 ligne par agence)
 // -----------------------------------------------------------------------------
-
 model Settings {
   id       Int @id @default(autoincrement())
   tenantId Int @unique @map("tenant_id")

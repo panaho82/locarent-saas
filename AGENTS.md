@@ -38,6 +38,8 @@ pnpm typecheck                  # tsc --noEmit
 pnpm lint
 pnpm test                       # vitest (tests d'intégration sur la base locale)
 pnpm build
+pnpm preview                    # serveur standalone = celui de l'image Docker
+pnpm exec playwright test       # parcours end-to-end (Chromium)
 pnpm db:migrate --name <nom>    # nouvelle migration
 pnpm db:reset                   # repart de zéro + seed
 pnpm db:seed                    # idempotent
@@ -132,6 +134,22 @@ via `db.tenant.findUnique({ where: { id: requireTenantId() } })`.
   (`tests/setup.ts` refuse `NODE_ENV=production`).
 - Le test `tenancy.test.ts` est un garde-fou de conception : s'il tombe, c'est
   que la couche de données n'est plus sûre.
+
+## Authentification et autorisations
+
+- Mots de passe : Argon2id (`src/server/auth/password.ts`). Ne jamais comparer
+  un mot de passe autrement que via `verifyPassword`.
+- Sessions : token opaque de 32 octets, **stocké haché** (SHA-256) dans
+  `sessions`. Cookie `locarent_session` en `httpOnly`, `SameSite=Lax`, 30 jours.
+- `requireSession()` dans un layout, et `can(session, "…")` dans **chaque**
+  Server Action. Une action est un endpoint public : ne jamais faire confiance
+  à l'interface qui a masqué un bouton.
+- Le proxy (`src/proxy.ts`) ne fait que rediriger si le cookie est absent.
+- Emails : `MAIL_TRANSPORT=console` (défaut) journalise sans envoyer. Tant
+  qu'il vaut `console`, les liens d'invitation sont affichés à l'invitant —
+  c'est volontaire, pas un oubli.
+- Toute action sensible doit laisser une trace via `logActivity()`
+  (`src/server/audit.ts`).
 
 ## Ce qui n'existe pas encore (ne pas supposer)
 

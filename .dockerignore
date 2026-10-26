@@ -1,0 +1,24 @@
+# Contexte de build volontairement minimal.
+
+node_modules
+.next
+.git
+.github
+src/generated
+
+# Archive d'analyse (52 Mo) : jamais dans l'image.
+_extract
+
+# Tests, artefacts, caches
+tests/e2e
+test-results
+playwright-report
+coverage
+*.tsbuildinfo
+
+# Secrets et fichiers locaux
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log

@@ -294,3 +294,44 @@ App + Postgres + Redis + MinIO. Migrations en **étape de déploiement séparée
 4. Confirmer le **nom de code `locarent`** (provisoire, sans lien avec la marque d'origine).
 
 Réponds « go » si tout te va : je démarre par l'Étape 1 et je te montre le squelette qui tourne avant d'aller plus loin.
+
+---
+
+## 8. Écarts constatés pendant l'implémentation
+
+Décisions prises en cours de route, avec leur raison. À lire avant de « corriger » le code pour le réaligner sur le plan.
+
+| # | Ce qui avait été planifié | Ce qui a été fait | Pourquoi |
+|---|---|---|---|
+| 1 | Tailwind via `postcss.config.mjs` | `@tailwindcss/turbopack` dans `next.config.ts`, pas de PostCSS | chemin officiel du template Next 16 ; PostCSS n'est plus nécessaire |
+| 2 | Injection de `tenantId` à la création | `tenantId` **requis par le type** + vérifié à l'exécution | Prisma l'exige au type : injecter silencieusement faisait diverger types et runtime |
+| 3 | `runWithTenant` synchrone | `withTenant` **asynchrone uniquement** | les PrismaPromise sont paresseuses : un contexte fermé avant l'`await` ne protège rien (bug réellement rencontré) |
+| 4 | Emails via Mailpit au Lot 0 | transport `console` + `MAIL_TRANSPORT`, SMTP au Lot 3 | évite une dépendance SMTP pour un lot qui n'envoie aucun email métier |
+| 5 | — | table `password_reset_tokens` ajoutée | absente du schéma d'origine ; indispensable pour un flux « mot de passe oublié » |
+| 6 | — | `start` = serveur standalone, `preview` = script de préparation | `next start` est **incompatible** avec `output: standalone` (avertissement officiel) |
+| 7 | Ports standard | 3210 / 55432 / 59000 / 58125 | 3000, 5432, 9000 et 8025 sont déjà occupés sur la machine de développement |
+
+### Écarts de schéma assumés (vs `docs/schema.sql`)
+
+1. `sessions` et `password_reset_tokens` ajoutées (auth web) ;
+2. `UNIQUE` global sur `lower(users.email)` — décision D5 ;
+3. `INET` → `varchar(45)` : Prisma ne modélise pas le type `inet` ;
+4. `start_time` / `end_time` en `varchar(5)` (`"08:00"`) au lieu de `TIME` — évite les dates fantômes `1970-01-01` en JS ;
+5. identifiants `SERIAL` et montants `INTEGER` (décision D2), `CHECK` → `enum` (D3) ;
+6. `personal_access_tokens` conservée sans relation (polymorphe), réservée au Lot 7.
+
+### Vérifié à la fin du Lot 0
+
+- `pnpm typecheck`, `pnpm lint`, `pnpm build` : verts
+- 17 tests d'intégration (isolation multi-tenant ×8, sessions ×9) sur base réelle
+- 6 tests end-to-end sur le serveur **standalone** (le même que l'image Docker) :
+  inscription → tableau de bord vide ; invitation → acceptation ; garde d'accès ;
+  connexion/déconnexion ; message d'erreur non énumérant ; sonde de santé
+- image Docker : 229 Mo, utilisateur non-root (uid 1001), healthcheck `healthy`,
+  `/admin/index` renvoie bien 307 vers `/login`
+- migrations rejouables depuis zéro (`migrate reset`) et via la cible `migrator`
+
+### Reste à faire
+
+- **Déploiement Dokploy** : bloqué faute d'accès (URL de l'instance, projet, domaine de staging).
+- Pousser le dépôt sur GitHub pour que la CI s'exécute réellement (le workflow est écrit mais n'a encore tourné que localement).
