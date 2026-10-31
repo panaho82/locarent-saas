@@ -60,8 +60,7 @@ développement, d'où des ports décalés — à garder cohérents avec `.env`.
 
 ## Déploiement
 
-**Staging en ligne : https://v2.locarent.uk** (Dokploy, projet dédié
-« locarent saas v2 »). Voir [`docs/deploiement.md`](docs/deploiement.md) § 5 pour le
+**En ligne : https://tahitikeys.uk** (Dokploy, projet dédié « Tahiti Keys », domaine propre — indépendant de l'application de production sur `locarent.uk`). Voir [`docs/deploiement.md`](docs/deploiement.md) § 5 pour le
 détail et la procédure de redéploiement.
 
 ```bash

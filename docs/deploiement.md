@@ -113,71 +113,74 @@ couverts par `tests/e2e/auth.spec.ts`.
 
 ---
 
-## 5. Déploiement effectué (Lot 0)
+## 5. Déploiement effectué (Lot 0) — Tahiti Keys
 
 | Élément | Valeur |
 |---|---|
 | Instance Dokploy | `https://dokploy.tahiti-iotservices.cloud` |
-| Projet Dokploy | **`locarent saas v2`** (`7WHjlULLsXzwP_m9nT239`) |
-| Application | compose **`locarent-saas-v2`** — `pdqHP8jxb07WTigap3Fu-` |
+| Projet Dokploy | **`Tahiti Keys`** (`d0blBd4EWfGpIPVdWIH10`) |
+| Application | compose **`tahitikeys`** (`TdfuTKIN0bamVepc1xWsz`) |
 | Dépôt source | `panaho82/locarent-saas`, branche `main`, `./docker-compose.prod.yml` |
-| URL | **https://v2.locarent.uk** |
-| Domaine → service | `app`, port `3000`, HTTPS |
+| URL | **https://tahitikeys.uk** (et `https://www.tahitikeys.uk`) |
+| DNS | Cloudflare, zone `0694f184f0ec82ae9d750c4f3060bbed`, 2 × A → `62.146.172.163`, **DNS only** |
+| Certificat | Let's Encrypt, `CN = tahitikeys.uk` puis `CN = www.tahitikeys.uk` |
 | Santé | `/api/health` → `{"status":"ok","database":"up","latencyMs":…}` |
 
-### Isolation vis-à-vis de la production — à ne pas casser
+### Isolation vis-à-vis de la production
 
 `app.locarent.uk` sert une **autre application** (dépôt `panaho82/car-rental-saas`,
-MySQL + MinIO + Resend), utilisée par des agences. Elle est en production et ne
-doit pas être touchée.
+MySQL + MinIO + Resend), utilisée par des agences. Elle ne doit pas être touchée.
 
-| | Production | Lot 0 (v2) |
+| | Production | Lot 0 |
 |---|---|---|
-| Projet Dokploy | `locarent` | `locarent saas v2` |
-| Application | `locarent` (`B1SX-UYq…`) | `locarent-saas-v2` (`pdqHP8j…`) |
-| Conteneurs | app, minio, mysql… | app, postgres, migrate |
+| Projet Dokploy | `locarent` | `Tahiti Keys` |
+| Application | `locarent` (`B1SX-UYq…`) | `tahitikeys` (`TdfuTKIN…`) |
+| Conteneurs | `car-rental-{app,mysql,cron,minio}` | `compose-…-{app,postgres,migrate}` |
 | Base | MySQL, son volume | PostgreSQL, **son volume** |
-| Signatures `/api/health` | `{"status":"healthy","database":"connected"}` | `{"status":"ok","database":"up"}` |
+| Signature `/api/health` | `{"status":"healthy","database":"connected"}` | `{"status":"ok","database":"up"}` |
 
-⚠️ **Piège durable** : la production déclare un domaine **joker**
-`*.locarent.uk → app:3000`. Tout sous-domaine non déclaré ailleurs retombe donc
-sur elle. C'est pourquoi `v2.locarent.uk` doit garder sa règle d'hôte exacte
-dans Dokploy : elle est plus spécifique que le joker et prend le dessus.
+Le domaine est **hors de `locarent.uk`** : plus de joker qui capte les
+sous-domaines, plus d'ambiguïté sur l'environnement consulté.
 
-Conséquence pratique : si l'application v2 est arrêtée, `v2.locarent.uk` affiche
-**la production**, sans erreur. Toujours vérifier la signature de
-`/api/health` avant de conclure qu'on regarde le bon environnement.
+### Règles d'isolation dans le fichier compose
 
-### Incident du 26/10 (à ne pas reproduire)
+`docker-compose.prod.yml` ne contient **ni `name:` de pile, ni port publié** :
 
-Un premier déploiement avait été fait dans le projet `locarent`, c'est-à-dire
-mêlé à l'application de production, sous `staging.locarent.uk`. Techniquement
-séparé (autres conteneurs, autre base), mais mal placé : même projet Dokploy,
-et un domaine posé au-dessus du joker de production. L'application a été
-arrêtée puis **supprimée**, et le déploiement refait dans un projet dédié.
+- un `name:` codé en dur fait que deux applications déployées depuis le même
+  fichier visent **la même pile Docker** — conteneurs et volumes partagés ;
+- un port publié fixe provoque une collision au deuxième déploiement.
 
-Règle qui en découle : **ne jamais créer d'application dans le projet Dokploy
-d'une production existante**, même « juste pour tester ».
+Le mapping de port vit dans `docker-compose.local.yml`, réservé au poste de
+développement.
 
-### Vérifications faites sur v2
+### Deux pièges rencontrés lors de ce déploiement
 
-- `/api/health` renvoie bien la signature du Lot 0 (et non celle de la production) ;
+1. **Supprimer une application Dokploy ne supprime pas ses conteneurs.** Après
+   suppression, une pile est restée en marche plusieurs jours, avec son
+   PostgreSQL, et a bloqué le déploiement suivant (port occupé). Vérifier avec
+   `docker.getContainersByAppNameMatch` et arrêter/supprimer explicitement.
+2. **Ajouter un domaine à une application déjà déployée ne régénère pas la
+   configuration dynamique de Traefik.** Un redéploiement n'a pas suffi : il a
+   fallu `settings.reloadTraefik` (API Dokploy) pour que le routeur TLS et le
+   certificat soient créés. ⚠️ Ce rechargement interrompt brièvement **tous**
+   les services de l'instance, production comprise (quelques secondes).
+
+### Vérifications faites sur tahitikeys.uk
+
+- certificat Let's Encrypt valide sur l'apex et sur `www` ;
+- `/api/health` renvoie la signature du Lot 0, distincte de la production ;
 - `/admin/index` sans session → 307 vers `/login` ;
-- inscription réelle dans un navigateur → tableau de bord, cookie `httpOnly` +
-  `secure`, `SameSite=Lax` ;
+- inscription réelle dans un navigateur → tableau de bord, cookie `httpOnly`
+  **et `secure`**, `SameSite=Lax` ;
 - écran Équipe accessible au propriétaire ;
-- production toujours à 200 sur `/`, `/login`, `/api/health`.
+- production toujours à 200 sur `/`, `/login`, `/api/health`, conteneurs
+  « Up 11 days » (jamais redémarrés).
 
-### DNS
+### Redéployer
 
-`*.locarent.uk` est déjà un joker DNS-only vers `62.146.172.163` : `v2.locarent.uk`
-résout donc sans enregistrement dédié. Pour rendre le sous-domaine explicite et
-indépendant du joker, créer dans Cloudflare :
-
-```
-Type    : A
-Nom     : v2
-Contenu : 62.146.172.163
-Proxy   : DNS only (nuage gris)   ← obligatoire pour Let's Encrypt HTTP-01
-TTL     : Auto
+```bash
+curl -X POST "$DOKPLOY/api/trpc/compose.deploy" \
+  -u "$BASIC_AUTH" -H "x-api-key: $DOKPLOY_KEY" \
+  -H "content-type: application/json" \
+  -d '{"json":{"composeId":"TdfuTKIN0bamVepc1xWsz"}}'
 ```
