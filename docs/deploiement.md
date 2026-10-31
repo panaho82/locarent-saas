@@ -21,9 +21,9 @@ démarrage que sur le serveur.
 cp .env.stack.example .env.stack
 #   renseigner AUTH_SECRET et POSTGRES_PASSWORD
 
-docker compose -f docker-compose.prod.yml --env-file .env.stack up -d --build
+docker compose -f docker-compose.prod.yml -f docker-compose.local.yml --env-file .env.stack up -d --build
 curl http://localhost:3212/api/health
-docker compose -f docker-compose.prod.yml --env-file .env.stack down -v
+docker compose -f docker-compose.prod.yml -f docker-compose.local.yml --env-file .env.stack down -v
 ```
 
 Ordre garanti par Compose : `postgres` (healthy) → `migrate` (une fois) →
@@ -83,10 +83,14 @@ variables `POSTGRES_*` et du nom de service `postgres`.
    plusieurs réplicas ne demande aucune modification (sessions en base).
 5. **`APP_URL`** doit être l'URL publique réelle : elle sert à construire les
    liens d'invitation et de réinitialisation envoyés par email.
-6. **Port publié** : sur Dokploy, Traefik joint le conteneur par le réseau
-   interne, le mapping `${APP_HOST_PORT}:3000` n'est pas nécessaire. Le laisser
-   par défaut est inoffensif si le port 3212 est libre sur l'hôte ; sinon, le
-   changer ou supprimer la ligne `ports`.
+6. **Aucun port publié en production** : Traefik joint le conteneur par le
+   réseau interne. Le mapping de port vit dans `docker-compose.local.yml`
+   (override de développement). Publier un port fixe dans le fichier de
+   production ferait entrer en collision deux déploiements sur un même hôte.
+7. **Aucun nom de pile codé en dur** : le fichier ne contient pas de `name:`.
+   Chaque déploiement (chaque application Dokploy) doit posséder sa propre
+   pile Docker, ses conteneurs et ses volumes. C'est ce qui garantit qu'une
+   application ne peut pas hériter des conteneurs ou du volume d'une autre.
 
 ### 3.4 Après le déploiement
 

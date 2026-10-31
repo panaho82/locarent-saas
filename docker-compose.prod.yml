@@ -5,15 +5,14 @@
 #  déploiement en local avant de toucher au serveur.
 #
 #    cp .env.stack.example .env.stack   # puis renseigner AUTH_SECRET
-#    docker compose -f docker-compose.prod.yml up -d --build
+#    docker compose -f docker-compose.prod.yml -f docker-compose.local.yml \
+#      --env-file .env.stack up -d --build
 #    curl http://localhost:3212/api/health
 #
 #  Ordre : postgres (healthy) → migrate (une fois) → app.
 #  Les migrations ne sont PAS dans l'entrypoint de l'app : avec plusieurs
 #  réplicas, elles s'exécuteraient en parallèle et se marcheraient dessus.
 # =============================================================================
-
-name: locarent-prod
 
 services:
   postgres:
@@ -69,10 +68,12 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-    # Sur Dokploy, Traefik joint le conteneur par le réseau interne : ce
-    # port publié ne sert qu'à la vérification locale.
-    ports:
-      - "${APP_HOST_PORT:-3212}:3000"
+    # Aucun port publié : Traefik joint le conteneur par le réseau interne.
+    # Publier un port fixe ferait entrer en collision deux déploiements du
+    # même fichier sur un même hôte. Pour tester en local, utiliser
+    # docker-compose.local.yml (override) qui ajoute le mapping.
+    expose:
+      - "3000"
     depends_on:
       postgres:
         condition: service_healthy

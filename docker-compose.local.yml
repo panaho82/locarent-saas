@@ -1,0 +1,14 @@
+# Override de développement : publie le port pour vérifier la pile de
+# production depuis la machine locale. Ne jamais l'utiliser sur le serveur.
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.local.yml \
+#     --env-file .env.stack up -d --build
+#
+# L'absence de `name:` dans docker-compose.prod.yml est volontaire : le nom de
+# pile doit être unique par déploiement, sinon deux applications se disputent
+# les mêmes conteneurs et les mêmes volumes.
+
+services:
+  app:
+    ports:
+      - "${APP_HOST_PORT:-3212}:3000"
