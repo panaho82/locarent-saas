@@ -94,6 +94,14 @@ test("immatriculation en double : erreur de champ, pas d'exception", async ({ pa
     }
   }
 
+  // Le message global nomme le champ, même si l'onglet affiché est
+  // « Tarification » — c'est ce que voit l'utilisateur.
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Champs à corriger" }),
+  ).toContainText("Immatriculation");
+
+  // Et l'erreur de champ est bien présente dans l'onglet Informations.
+  await page.getByRole("button", { name: "Informations", exact: true }).click();
   await expect(page.getByText("Cette immatriculation existe déjà")).toBeVisible();
   await prisma.tenant.deleteMany({ where: { slug: { contains: id } } });
   await prisma.user.deleteMany({ where: { email: { contains: id } } });

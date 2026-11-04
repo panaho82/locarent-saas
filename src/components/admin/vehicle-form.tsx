@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ArrowLeft, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,27 @@ function Submit({ label }: { label: string }) {
   );
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  name: "Nom",
+  model: "Modèle",
+  brandId: "Marque",
+  licensePlate: "Immatriculation",
+  mainLocationId: "Emplacement principal",
+  categoryId: "Catégorie",
+  colorSlug: "Couleur",
+  year: "Année",
+  fuelType: "Carburant",
+  transmissionType: "Transmission",
+  mileage: "Kilométrage",
+  seats: "Nombre de places",
+  nextTechnicalControlDate: "Contrôle technique",
+  dailyRate: "Prix par jour",
+  weeklyRate: "Prix par semaine",
+  monthlyRate: "Prix par mois",
+  baseKilometers: "Kilomètres inclus",
+  extraKmPrice: "Prix du km supplémentaire",
+};
+
 const selectClass =
   "h-10 w-full rounded-btn border border-line bg-surface px-3 text-sm text-ink";
 
@@ -97,23 +118,13 @@ export function VehicleForm({
 
   const error = (name: string) => state.fieldErrors?.[name]?.[0];
 
-  /**
-   * Une erreur de validation peut concerner un champ de l'autre onglet :
-   * sans ce basculement, l'utilisateur verrait « certains champs sont
-   * invalides » sans pouvoir trouver lequel.
-   */
-  useEffect(() => {
-    const keys = Object.keys(state.fieldErrors ?? {});
-    if (keys.length === 0) return;
-    const tarificationFields = new Set([
-      "dailyRate",
-      "weeklyRate",
-      "monthlyRate",
-      "baseKilometers",
-      "extraKmPrice",
-    ]);
-    setTab(keys.every((k) => tarificationFields.has(k)) ? "tarification" : "informations");
-  }, [state]);
+  /* Erreurs : on nomme les champs concernés plutôt que de basculer
+     d'onglet de force — un setState dans un effet est proscrit par
+     react-hooks/set-state-in-effect, et une bascule forcée empêcherait
+     l'utilisateur de consulter l'autre onglet. */
+  const invalidFields = Object.entries(state.fieldErrors ?? {}).map(
+    ([key, messages]) => FIELD_LABELS[key] ?? messages[0] ?? key,
+  );
 
   return (
     <div>
@@ -163,7 +174,9 @@ export function VehicleForm({
                 <Alert variant={state.status === "success" ? "success" : "error"}>
                   {state.message ??
                     (state.status === "error"
-                      ? "Certains champs sont invalides ou incomplets. Vérifiez le formulaire."
+                      ? invalidFields.length > 0
+                        ? `Champs à corriger : ${[...new Set(invalidFields)].join(", ")}.`
+                        : "Certains champs sont invalides ou incomplets."
                       : "")}
                 </Alert>
               </div>
