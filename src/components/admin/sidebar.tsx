@@ -68,7 +68,7 @@ const SECTIONS: NavSection[] = [
   {
     label: "Parc automobile",
     items: [
-      { label: "Véhicules", icon: Car },
+      { label: "Véhicules", href: "/admin/cars", icon: Car },
       { label: "Services supplémentaires", icon: Package },
       { label: "Maintenance", icon: Wrench },
     ],
@@ -149,12 +149,18 @@ export function Sidebar({ tenantName }: { tenantName: string }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-btn px-2 py-1.5 text-[13px] transition-colors",
+                        "relative flex items-center gap-2.5 rounded-btn px-2 py-1.5 text-[13px] transition-colors",
                         active
-                          ? "bg-brand-soft font-semibold text-ink"
+                          ? "font-semibold text-brand-text"
                           : "text-body hover:bg-app hover:text-ink",
                       )}
                     >
+                      {active ? (
+                        <span
+                          aria-hidden
+                          className="absolute -left-3 top-1 bottom-1 w-[3px] rounded-full bg-brand"
+                        />
+                      ) : null}
                       <Icon
                         className={cn(
                           "size-4 shrink-0",

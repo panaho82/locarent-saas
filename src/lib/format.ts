@@ -98,3 +98,30 @@ export function todayInTahiti(): string {
     day: "2-digit",
   }).format(new Date());
 }
+
+const UNITS = [
+  { limit: 60_000, label: "minute", ms: 60_000 },
+  { limit: 3_600_000, label: "minute", ms: 60_000 },
+  { limit: 86_400_000, label: "heure", ms: 3_600_000 },
+  { limit: 2_592_000_000, label: "jour", ms: 86_400_000 },
+  { limit: 31_536_000_000, label: "mois", ms: 2_592_000_000 },
+] as const;
+
+/** « il y a 23 minutes », « il y a 2 jours » — comme la liste d'origine. */
+export function formatRelative(value: Date | string | null | undefined): string {
+  const date = toDate(value);
+  if (!date) return "—";
+
+  const diff = Date.now() - date.getTime();
+  if (diff < 60_000) return "à l'instant";
+
+  for (const unit of UNITS) {
+    if (diff < unit.limit) {
+      const count = Math.max(1, Math.floor(diff / unit.ms));
+      return `il y a ${count} ${unit.label}${count > 1 ? "s" : ""}`;
+    }
+  }
+
+  const years = Math.floor(diff / 31_536_000_000);
+  return `il y a ${years} an${years > 1 ? "s" : ""}`;
+}

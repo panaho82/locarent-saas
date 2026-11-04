@@ -183,6 +183,65 @@ async function main() {
     },
   });
 
+  // Référentiels propres à l'agence : catégories de véhicules et lieux.
+  console.log("→ catégories et lieux");
+  for (const name of ["Auto", "Scooter", "Utilitaire"]) {
+    const existing = await prisma.vehicleCategory.findFirst({
+      where: { tenantId: tenant.id, name },
+      select: { id: true },
+    });
+    if (!existing) {
+      await prisma.vehicleCategory.create({ data: { tenantId: tenant.id, name } });
+    }
+  }
+
+  const location =
+    (await prisma.location.findFirst({
+      where: { tenantId: tenant.id, name: DEMO.tenantName },
+      select: { id: true },
+    })) ??
+    (await prisma.location.create({
+      data: {
+        tenantId: tenant.id,
+        name: DEMO.tenantName,
+        address: "Quai des Pêcheurs, Uturoa",
+        island: "Raiatea",
+        isDefault: true,
+        isPublic: true,
+        isFree: true,
+      },
+      select: { id: true },
+    }));
+
+  const category = await prisma.vehicleCategory.findFirstOrThrow({
+    where: { tenantId: tenant.id, name: "Auto" },
+    select: { id: true },
+  });
+
+  // Un véhicule de démonstration, comme sur la capture « Tous les véhicules ».
+  await prisma.vehicle.upsert({
+    where: { tenantId_licensePlate: { tenantId: tenant.id, licensePlate: "276 969 P" } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      name: "Renault Kwid",
+      licensePlate: "276 969 P",
+      make: "Renault",
+      model: "KWID",
+      year: 2026,
+      mileage: 12_000,
+      seats: 4,
+      fuelType: "petrol",
+      transmissionType: "manual",
+      status: "available",
+      dailyRate: 6630,
+      weeklyRate: 39_000,
+      monthlyRate: 140_000,
+      categoryId: category.id,
+      mainLocationId: location.id,
+    },
+  });
+
   const password = await hashPassword(DEMO.password);
   const owner = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: DEMO.email } },

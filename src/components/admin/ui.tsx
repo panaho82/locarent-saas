@@ -15,10 +15,11 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
+        {/* Maquette d'origine : le titre d'abord, le fil d'Ariane en dessous. */}
+        <h1 className="text-2xl font-bold leading-tight text-ink">{title}</h1>
         {breadcrumb?.length ? (
-          <p className="mb-1 text-xs text-muted">{breadcrumb.join(" › ")}</p>
+          <p className="mt-1 text-[13px] text-body">{breadcrumb.join(" › ")}</p>
         ) : null}
-        <h1 className="text-xl font-bold text-ink">{title}</h1>
         {description ? (
           <p className="mt-1 max-w-2xl text-sm text-body">{description}</p>
         ) : null}

@@ -97,7 +97,14 @@ docs/              specs d'analyse + schema.sql + plan des lots
 - [x] Permissions granulaires (53) et écran Équipe
 - [x] Layout admin (sidebar 5 sections, header, tableau de bord, réglages)
 - [x] CI GitHub Actions, image Docker standalone (229 Mo, non-root)
-- [ ] Déploiement Dokploy (en attente d'accès)
+- [x] Déploiement Dokploy (https://tahitikeys.uk)
+
+### Lot 1 — en cours
+
+- [x] Parc automobile : liste (recherche, tri, pagination), création, modification,
+      suppression (désactivation si le véhicule a des réservations), tarification
+- [ ] Catégories, lieux, services supplémentaires (écrans dédiés)
+- [ ] Clients, conducteurs, sociétés
 
 Vérifications : `pnpm test` (17 tests d'intégration) et `pnpm exec playwright test`
 (8 parcours réels sur le serveur standalone, dont un audit d'accessibilité axe
