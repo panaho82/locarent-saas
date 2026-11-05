@@ -19,7 +19,7 @@ export default function AuthLayout({
               className="inline-block size-8 rounded-btn bg-brand"
             />
             <span className="text-lg font-bold tracking-tight text-ink">
-              Locarent
+              Tahiti Keys
             </span>
           </Link>
         </header>

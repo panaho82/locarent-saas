@@ -10,11 +10,11 @@ const albertSans = Albert_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Locarent",
-    template: "%s · Locarent",
+    default: "Tahiti Keys",
+    template: "%s · Tahiti Keys",
   },
   description:
-    "Logiciel de gestion pour les agences de location de véhicules en Polynésie française.",
+    "Tahiti Keys — logiciel de gestion pour les agences de location de véhicules en Polynésie française.",
 };
 
 export default function RootLayout({

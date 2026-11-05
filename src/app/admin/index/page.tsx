@@ -80,7 +80,7 @@ export default async function DashboardPage() {
       <Card className="mb-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-ink">
-            Bienvenue sur Locarent
+            Bienvenue sur Tahiti Keys
           </h2>
           <span className="text-xs text-muted">{doneCount}/5</span>
         </div>

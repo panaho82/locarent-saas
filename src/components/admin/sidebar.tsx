@@ -178,7 +178,7 @@ export function Sidebar({ tenantName }: { tenantName: string }) {
       </nav>
 
       <div className="border-t border-line px-4 py-3 text-[11px] text-muted">
-        Locarent · v0.1 (Lot 0)
+        Tahiti Keys · v0.1
       </div>
     </aside>
   );
