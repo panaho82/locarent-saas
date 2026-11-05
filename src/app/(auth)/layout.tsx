@@ -35,7 +35,7 @@ export default function AuthLayout({
         </footer>
       </div>
 
-      <aside className="relative hidden overflow-hidden bg-[#FFF8EF] lg:block">
+      <aside className="relative hidden overflow-hidden bg-[#F1F5FD] lg:block">
         <div
           aria-hidden
           className="absolute -right-24 -top-24 size-96 rounded-full bg-brand/20"

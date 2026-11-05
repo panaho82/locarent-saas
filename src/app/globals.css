@@ -5,12 +5,12 @@
  * Tokens exposés comme utilitaires Tailwind 4 : bg-brand, text-ink, border-line…
  */
 @theme {
-  /* Marque */
-  --color-brand: #ffa633;
-  --color-brand-dark: #f7941d;
-  --color-brand-soft: #fff4e6;
-  /* Orange utilisable EN TEXTE : #f7941d ne donne que 2.3:1 sur blanc. */
-  --color-brand-text: #b45309;
+  /* Marque — bleu océan (Tahiti Keys).
+     Écarté : les turquoises, trop proches du vert « succès » (ratio 1,2). */
+  --color-brand: #1d4ed8;        /* surfaces, boutons — 6,7:1 avec texte blanc */
+  --color-brand-dark: #1e40af;   /* survol, dégradés */
+  --color-brand-soft: #e8eefb;   /* fonds de badge, surlignage */
+  --color-brand-text: #1d4ed8;   /* liens et accents — 6,7:1 sur blanc */
 
   /* Texte */
   --color-ink: #111827;
@@ -43,8 +43,8 @@
 }
 
 /* Contrastes (WCAG AA, 4.5:1 pour le texte courant) :
-   · #FFA633 et #F7941D ne servent JAMAIS de couleur de texte sur fond clair
-     (2.0 et 2.3:1) — en texte, utiliser --color-brand-text (#B45309, 5.0:1) ;
+   · --color-brand (#1D4ED8) tient 6,7:1 avec du texte blanc : il peut donc
+     servir de fond de bouton ET de couleur de texte ;
    · --color-body = 4.85:1 sur le fond gris de l'admin ;
    · --color-muted = 4.97:1.
    Ces valeurs sont vérifiées automatiquement par tests/e2e/accessibilite.spec.ts. */

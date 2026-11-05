@@ -183,8 +183,8 @@ export function VehicleForm({
             ) : null}
 
             {/* Bandeau de section, comme sur la capture « Ajouter un véhicule ». */}
-            <div className="my-4 flex items-center gap-2 rounded-btn bg-[#EAF3F8] px-4 py-3">
-              <Info className="size-4 text-[#2C6C8F]" aria-hidden />
+            <div className="my-4 flex items-center gap-2 rounded-btn bg-[#EAF1FB] px-4 py-3">
+              <Info className="size-4 text-[#1E40AF]" aria-hidden />
               <span className="text-sm font-semibold text-ink">
                 {tab === "informations" ? "Informations de base" : "Tarification"}
               </span>
@@ -315,7 +315,7 @@ export function VehicleForm({
 
                 <label className="mt-4 flex items-center gap-2 text-[13px] text-ink">
                   <input type="checkbox" name="isUnlimitedKilometers" defaultChecked={values.isUnlimitedKilometers}
-                    className="size-4 accent-[#F7941D]" />
+                    className="size-4 accent-[#1D4ED8]" />
                   Kilométrage illimité
                 </label>
 

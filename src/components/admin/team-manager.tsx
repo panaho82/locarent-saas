@@ -75,7 +75,7 @@ function PermissionPicker({
                   value={permission}
                   defaultChecked={selected.includes(permission)}
                   disabled={disabled}
-                  className="mt-0.5 size-3.5 accent-[#F7941D]"
+                  className="mt-0.5 size-3.5 accent-[#1D4ED8]"
                 />
                 {PERMISSION_LABELS[permission as Permission] ?? permission}
               </label>

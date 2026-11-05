@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 /**
  * Boutons du design system (spec/07-design-system.md).
  *
- * Le orange #FFA633 ne sert jamais de couleur de texte : soit fond avec texte
+ * Le orange #1D4ED8 ne sert jamais de couleur de texte : soit fond avec texte
  * foncé (primaire), soit bordure/accent avec texte foncé. Raison : contraste.
  */
 const buttonVariants = cva(
@@ -13,7 +13,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-brand text-ink hover:bg-brand-dark",
+        primary: "bg-brand text-white hover:bg-brand-dark",
         secondary:
           "border border-line bg-surface text-ink hover:bg-app",
         ghost: "text-body hover:bg-app hover:text-ink",

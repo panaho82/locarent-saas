@@ -137,12 +137,19 @@ Le produit d'origine a des contrastes insuffisants ; la refonte doit viser
 |---|---|---|---|
 | `--color-body` | `#666F77` | 4.85:1 | texte courant |
 | `--color-muted` | `#667085` | 4.72:1 | libellés, hints, métadonnées |
-| `--color-brand-text` | `#B45309` | 4.76:1 | liens et titres accentués |
+| `--color-brand` | `#1D4ED8` | 6.7:1 (texte blanc) | boutons, surfaces |
+| `--color-brand-text` | `#1D4ED8` | 6.15:1 sur fond crème | liens, accents |
+
+**Identité visuelle** : bleu océan profond. C'est un choix assumé pour se
+démarquer de l'orange de FenuaCar tout en restant lisible. Les turquoises ont
+été écartés : trop proches du vert « succès » (ratio de contraste 1,2 entre les
+deux — indistinguables).
 
 Règles :
-- `--color-brand` (#FFA633) et `--color-brand-dark` (#F7941D) servent de
-  **fond** ou de bordure, **jamais** de couleur de texte sur fond clair
-  (2.0:1 et 2.3:1). Pour du texte : `text-brand-text`.
+- `--color-brand` sert de **fond** avec du texte **blanc** (jamais encre foncée :
+  6.7:1 en blanc contre 3.5:1 en encre) ;
+- le vert, l'ambre et le rouge restent **réservés aux statuts** — ne pas les
+  réutiliser comme couleur décorative ;
 - `tests/e2e/accessibilite.spec.ts` échoue sur toute violation axe de gravité
   `serious` ou `critical`. Ne pas le désactiver pour faire passer une PR.
 

@@ -44,22 +44,22 @@ export default async function DashboardPage() {
       />
 
       {/* Bandeau de bienvenue — orange en fond, texte foncé (contraste). */}
-      <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-card bg-gradient-to-r from-[#FFB757] to-brand-dark px-5 py-4">
+      <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-card bg-gradient-to-r from-[#2563EB] to-brand-dark px-5 py-4">
         <div>
-          <p className="text-lg font-bold text-ink">
+          <p className="text-lg font-bold text-white">
             ’Ia ora na, {firstName} !
           </p>
-          <p className="text-[13px] text-ink/80">
+          <p className="text-[13px] text-white/85">
             {formatLongDate(new Date())} · {session.tenant.name}
           </p>
         </div>
         <div className="flex gap-3 text-center">
           <div className="rounded-btn bg-surface/80 px-4 py-2">
-            <p className="text-lg font-bold text-ink">0</p>
+            <p className="text-lg font-bold text-white">0</p>
             <p className="text-[11px] text-body">Locations en cours</p>
           </div>
           <div className="rounded-btn bg-surface/80 px-4 py-2">
-            <p className="text-lg font-bold text-ink">0</p>
+            <p className="text-lg font-bold text-white">0</p>
             <p className="text-[11px] text-body">À venir</p>
           </div>
         </div>
