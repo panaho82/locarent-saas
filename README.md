@@ -106,6 +106,13 @@ docs/              specs d'analyse + schema.sql + plan des lots
 - [x] Catégories (création depuis le formulaire véhicule), emplacements,
       services supplémentaires
 - [x] Clients, conducteurs, entreprises clientes
+- [x] Maintenance (interventions, échéances, contrôle technique)
+
+### Lot 2 — prochaine session
+
+Réservations et planning : moteur de prix (jours/semaines/mois, options, frais,
+remises, TVA), détection de conflits, calendrier et planning flotte en
+glisser-déposer.
 
 Vérifications : `pnpm test` (17 tests d'intégration) et `pnpm exec playwright test`
 (8 parcours réels sur le serveur standalone, dont un audit d'accessibilité axe
