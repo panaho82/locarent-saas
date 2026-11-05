@@ -42,12 +42,21 @@ const monthFormatter = new Intl.DateTimeFormat("fr-FR", {
   timeZone: TIMEZONE,
 });
 
-/** 6630 → « 6 630 XPF » */
+/**
+ * 6630 → « 6 630 XPF »
+ *
+ * `Intl` insère une espace fine insécable (U+202F) comme séparateur de
+ * milliers. À 13 px elle est presque invisible : « 1500 XPF » se lit comme un
+ * nombre non groupé. On la remplace par une espace insécable pleine (U+00A0).
+ */
 export function formatXPF(amount: number | null | undefined): string {
   if (amount === null || amount === undefined || Number.isNaN(amount)) {
     return "—";
   }
-  return `${integerFormatter.format(Math.round(amount))} ${CURRENCY}`;
+  const grouped = integerFormatter
+    .format(Math.round(amount))
+    .replace(/\u202f/g, "\u00a0");
+  return `${grouped} ${CURRENCY}`;
 }
 
 /** 01/11/2026 */
