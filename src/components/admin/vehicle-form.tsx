@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { ArrowLeft, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   deleteVehicleAction,
   updateVehicleAction,
 } from "@/server/actions/vehicles";
+import { createCategoryAction } from "@/server/actions/catalog";
 import { IDLE_ACTION_STATE } from "@/server/actions/types";
 
 export type VehicleFormValues = {
@@ -114,6 +116,18 @@ export function VehicleForm({
 }) {
   const action = mode === "create" ? createVehicleAction : updateVehicleAction;
   const [state, formAction] = useActionState(action, IDLE_ACTION_STATE);
+  const [categoryState, categoryAction] = useActionState(
+    createCategoryAction,
+    IDLE_ACTION_STATE,
+  );
+  const router = useRouter();
+
+  // Après création d'une catégorie, on recharge les options du formulaire.
+  // `router.refresh()` n'est pas un setState : il ne déclenche pas de rendu en
+  // cascade, il redemande les données au serveur.
+  useEffect(() => {
+    if (categoryState.status === "success") router.refresh();
+  }, [categoryState, router]);
   const [tab, setTab] = useState<"informations" | "tarification">("informations");
 
   const error = (name: string) => state.fieldErrors?.[name]?.[0];
@@ -246,6 +260,38 @@ export function VehicleForm({
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                       </select>
+                      <details className="mt-1.5">
+                        <summary className="cursor-pointer text-[12px] font-medium text-brand-text">
+                          Nouvelle catégorie
+                        </summary>
+                        <div className="mt-2 flex gap-2">
+                          <input
+                            name="categoryName"
+                            formAction={categoryAction}
+                            placeholder="Scooter, Utilitaire…"
+                            className="h-9 w-full rounded-btn border border-line bg-surface px-2 text-[13px] text-ink"
+                          />
+                          <Button
+                            type="submit"
+                            formAction={categoryAction}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Créer
+                          </Button>
+                        </div>
+                        {categoryState.message ? (
+                          <p
+                            className={
+                              categoryState.status === "success"
+                                ? "mt-1 text-[11px] text-success"
+                                : "mt-1 text-[11px] text-danger"
+                            }
+                          >
+                            {categoryState.message}
+                          </p>
+                        ) : null}
+                      </details>
                     </Field>
                     <Field label="Couleur" htmlFor="colorSlug" error={error("colorSlug")}>
                       <select id="colorSlug" name="colorSlug" defaultValue={values.colorSlug} className={selectClass}>

@@ -21,6 +21,12 @@ const LOCATION = {
   island: "Raiatea",
 };
 
+const EXTRAS = [
+  { name: "GPS", description: "Navigation GPS portable", price: 1500, priceType: "per_day" as const },
+  { name: "Siège enfant", description: "Siège auto pour enfant", price: 1000, priceType: "per_rental" as const },
+  { name: "Assurance tous risques", description: "Franchise réduite à zéro", price: 2500, priceType: "per_day" as const },
+];
+
 const VEHICLES = [
   { name: "Renault Kwid", model: "KWID", plate: "276 969 P", year: 2026, seats: 4, fuel: "petrol", gearbox: "manual", rate: 6630 },
   { name: "Dacia Sandero", model: "Sandero", plate: "845 120 P", year: 2025, seats: 5, fuel: "petrol", gearbox: "manual", rate: 7900 },
@@ -84,6 +90,18 @@ export async function loadDemoDataAction(): Promise<void> {
       added += 1;
     }
 
+    for (const extra of EXTRAS) {
+      const exists = await db.extraService.findFirst({
+        where: { name: extra.name },
+        select: { id: true },
+      });
+      if (!exists) {
+        await db.extraService.create({
+          data: { tenantId, ...extra, isActive: true },
+        });
+      }
+    }
+
     return added;
   });
 
@@ -97,6 +115,8 @@ export async function loadDemoDataAction(): Promise<void> {
   });
 
   revalidatePath("/admin/cars");
+  revalidatePath("/admin/locations");
+  revalidatePath("/admin/extra-services");
   revalidatePath("/admin/index");
 
 }

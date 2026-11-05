@@ -62,14 +62,14 @@ const SECTIONS: NavSection[] = [
     label: "Gestion",
     items: [
       { label: "Clients", icon: Users },
-      { label: "Lieux", icon: MapPin },
+      { label: "Lieux", href: "/admin/locations", icon: MapPin },
     ],
   },
   {
     label: "Parc automobile",
     items: [
       { label: "Véhicules", href: "/admin/cars", icon: Car },
-      { label: "Services supplémentaires", icon: Package },
+      { label: "Services supplémentaires", href: "/admin/extra-services", icon: Package },
       { label: "Maintenance", icon: Wrench },
     ],
   },
