@@ -165,6 +165,21 @@ développement.
    certificat soient créés. ⚠️ Ce rechargement interrompt brièvement **tous**
    les services de l'instance, production comprise (quelques secondes).
 
+### Après chaque déploiement : attendre le conteneur
+
+Le statut « done » du déploiement signifie que la commande est terminée, **pas**
+que le service répond. Pendant le redémarrage du conteneur, Traefik n'a pas
+encore de backend et renvoie un `404 page not found` (et non une erreur 502) —
+ce qui peut faire croire à un problème de routage.
+
+Vérifier dans cet ordre :
+
+1. `docker.getContainersByAppNameMatch` → conteneur `app` en `running (healthy)` ;
+2. `curl https://tahitikeys.uk/api/health` → 200 ;
+3. seulement ensuite, les pages.
+
+Compter 30 à 60 secondes après un déploiement.
+
 ### Vérifications faites sur tahitikeys.uk
 
 - certificat Let's Encrypt valide sur l'apex et sur `www` ;
