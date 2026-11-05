@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loadDemoDataAction } from "@/server/actions/demo";
 import { MoreVertical, Plus, Search } from "lucide-react";
 import { AccessDenied, PageHeader } from "@/components/admin/ui";
 import { buttonVariants } from "@/components/ui/button";
@@ -186,6 +187,16 @@ export default async function CarsPage({
                       ? "Aucun résultat pour cette recherche."
                       : "Ajoutez votre premier véhicule pour commencer."}
                   </p>
+                  {!q && session.role === "owner" ? (
+                    <form action={loadDemoDataAction} className="mt-4">
+                      <button
+                        type="submit"
+                        className="text-[13px] font-medium text-brand-text underline-offset-2 hover:underline"
+                      >
+                        Charger un parc de démonstration
+                      </button>
+                    </form>
+                  ) : null}
                 </td>
               </tr>
             ) : (
