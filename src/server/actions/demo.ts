@@ -149,6 +149,48 @@ export async function loadDemoDataAction(): Promise<void> {
       });
     }
 
+    // Une intervention terminée et une planifiée, pour illustrer l'écran.
+    const firstVehicle = await db.vehicle.findFirst({
+      where: { licensePlate: "276 969 P" },
+      select: { id: true },
+    });
+    if (firstVehicle) {
+      const existing = await db.maintenance.findFirst({
+        where: { vehicleId: firstVehicle.id, title: "Vidange + filtres" },
+        select: { id: true },
+      });
+      if (!existing) {
+        await db.maintenance.create({
+          data: {
+            tenantId,
+            vehicleId: firstVehicle.id,
+            type: "service",
+            status: "done",
+            title: "Vidange + filtres",
+            description: "Entretien des 15 000 km",
+            cost: 23_600,
+            mileage: 12_000,
+            performedAt: new Date("2026-02-15T00:00:00Z"),
+            nextDueDate: new Date("2027-02-15T00:00:00Z"),
+            nextDueMileage: 22_000,
+            garage: "Garage Teura",
+          },
+        });
+        await db.maintenance.create({
+          data: {
+            tenantId,
+            vehicleId: firstVehicle.id,
+            type: "technical_control",
+            status: "planned",
+            title: "Contrôle technique",
+            cost: 8_500,
+            nextDueDate: new Date("2026-11-08T00:00:00Z"),
+            garage: "Centre de contrôle Uturoa",
+          },
+        });
+      }
+    }
+
     return added;
   });
 
@@ -165,6 +207,7 @@ export async function loadDemoDataAction(): Promise<void> {
   revalidatePath("/admin/locations");
   revalidatePath("/admin/extra-services");
   revalidatePath("/admin/customers");
+  revalidatePath("/admin/maintenance");
   revalidatePath("/admin/index");
 
 }

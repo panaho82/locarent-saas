@@ -68,7 +68,7 @@ export function DriverManager({
                   <p className="text-[11px] text-muted">
                     Permis {driver.licenseCardNumber ?? "—"}
                     {driver.licenseExpiresAt
-                      ? ` · expire le ${new Date(driver.licenseExpiresAt).toLocaleDateString("fr-FR", { timeZone: "Pacific/Tahiti" })}`
+                      ? ` · expire le ${new Date(driver.licenseExpiresAt).toLocaleDateString("fr-FR", { timeZone: "UTC" })}`
                       : ""}
                   </p>
                 </div>

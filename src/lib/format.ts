@@ -59,7 +59,25 @@ export function formatXPF(amount: number | null | undefined): string {
   return `${grouped} ${CURRENCY}`;
 }
 
-/** 01/11/2026 */
+/**
+ * 01/11/2026 — pour une colonne `DATE` (sans heure).
+ *
+ * Prisma stocke un `@db.Date` à minuit **UTC**. Le formater dans le fuseau de
+ * Tahiti (UTC−10) le ferait reculer d'un jour : le 15 février s'afficherait
+ * « 14/02 ». On formate donc ces valeurs en UTC, sans conversion.
+ */
+export function formatDateOnly(value: Date | string | null | undefined): string {
+  const date = toDate(value);
+  if (!date) return "—";
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+/** 01/11/2026 — pour un horodatage (converti en heure de Tahiti). */
 export function formatDate(value: Date | string | null | undefined): string {
   const date = toDate(value);
   return date ? dateFormatter.format(date) : "—";

@@ -70,7 +70,7 @@ const SECTIONS: NavSection[] = [
     items: [
       { label: "Véhicules", href: "/admin/cars", icon: Car },
       { label: "Services supplémentaires", href: "/admin/extra-services", icon: Package },
-      { label: "Maintenance", icon: Wrench },
+      { label: "Maintenance", href: "/admin/maintenance", icon: Wrench },
     ],
   },
   {
