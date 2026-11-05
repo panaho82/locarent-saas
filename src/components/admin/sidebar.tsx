@@ -61,7 +61,7 @@ const SECTIONS: NavSection[] = [
   {
     label: "Gestion",
     items: [
-      { label: "Clients", icon: Users },
+      { label: "Clients", href: "/admin/customers", icon: Users },
       { label: "Lieux", href: "/admin/locations", icon: MapPin },
     ],
   },

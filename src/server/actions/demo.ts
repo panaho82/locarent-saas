@@ -102,6 +102,53 @@ export async function loadDemoDataAction(): Promise<void> {
       }
     }
 
+    // Deux clients et une entreprise, pour que la liste ne soit pas vide.
+    const customersSeed = [
+      { firstName: "Franck", lastName: "Teriitaumihau", email: "franck.demo@exemple.pf", phone: "89 43 09 86" },
+      { firstName: "Marie", lastName: "Teura", email: "marie.demo@exemple.pf", phone: "77 12 45 67" },
+    ];
+    for (const c of customersSeed) {
+      const exists = await db.customer.findFirst({
+        where: { email: c.email },
+        select: { id: true },
+      });
+      if (!exists) {
+        await db.customer.create({
+          data: {
+            tenantId,
+            type: "private",
+            source: "admin",
+            firstName: c.firstName,
+            lastName: c.lastName,
+            email: c.email,
+            phone: c.phone,
+            phoneCode: "+689",
+            city: "Uturoa",
+            country: "Polynésie française",
+          },
+        });
+      }
+    }
+
+    const companyExists = await db.company.findFirst({
+      where: { name: "Hôtel Raiatea Lodge" },
+      select: { id: true },
+    });
+    if (!companyExists) {
+      await db.company.create({
+        data: {
+          tenantId,
+          name: "Hôtel Raiatea Lodge",
+          contactName: "Mme Teura",
+          email: "compta@lodge.pf",
+          phone: "66 20 30 40",
+          city: "Uturoa",
+          country: "Polynésie française",
+          taxId: "123456",
+        },
+      });
+    }
+
     return added;
   });
 
@@ -117,6 +164,7 @@ export async function loadDemoDataAction(): Promise<void> {
   revalidatePath("/admin/cars");
   revalidatePath("/admin/locations");
   revalidatePath("/admin/extra-services");
+  revalidatePath("/admin/customers");
   revalidatePath("/admin/index");
 
 }
