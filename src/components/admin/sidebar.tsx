@@ -54,8 +54,8 @@ const SECTIONS: NavSection[] = [
     label: "Réservations",
     items: [
       { label: "Réservations", href: "/admin/reservations", icon: CalendarDays },
-      { label: "Calendrier", icon: CalendarDays },
-      { label: "Planning", icon: Gauge },
+      { label: "Calendrier", href: "/admin/calendar", icon: CalendarDays },
+      { label: "Planning", href: "/admin/planning", icon: Gauge },
     ],
   },
   {
