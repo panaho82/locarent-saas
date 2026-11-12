@@ -11,6 +11,7 @@ import {
   computePrice,
   computeRentalDays,
   suggestBilling,
+  unitLabel,
   type RateCard,
 } from "@/lib/pricing";
 import { formatXPF } from "@/lib/format";
@@ -310,7 +311,7 @@ export function BookingForm({
               <Field
                 label="Durée facturée"
                 htmlFor="value"
-                hint={preview ? `Suggestion : ${preview.suggestion.value} ${preview.suggestion.unit}` : undefined}
+                hint={preview ? `Suggestion : ${preview.suggestion.value} ${unitLabel(preview.suggestion.unit, preview.suggestion.value)}` : undefined}
                 error={error("value")}
               >
                 <div className="flex gap-2">
