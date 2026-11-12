@@ -38,7 +38,10 @@ export default async function EditBookingPage({
   );
   if (!booking) notFound();
 
-  const options = await loadBookingFormOptions(session.tenantId);
+  const options = {
+    ...(await loadBookingFormOptions(session.tenantId)),
+    canNegotiate: can(session, "booking.negotiate_rate"),
+  };
 
   const iso = (value: Date) => value.toISOString().slice(0, 10);
   const discount = booking.discountsList[0];
@@ -64,6 +67,10 @@ export default async function EditBookingPage({
     notes: booking.notes ?? "",
     internalNotes: booking.internalNotes ?? "",
     isUnlimitedKilometers: booking.isUnlimitedKilometers,
+    negotiatedTotal:
+      booking.negotiatedRates && typeof booking.negotiatedRates === "object"
+        ? String((booking.negotiatedRates as { vehicleTotal?: number }).vehicleTotal ?? "")
+        : undefined,
   };
 
   return (

@@ -55,6 +55,16 @@ export default async function BookingDetailPage({
 
   const discountsTotal = booking.discountsList.reduce((sum, d) => sum + d.amount, 0);
 
+  const negotiated = (() => {
+    const value = booking.negotiatedRates;
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const data = value as { vehicleTotal?: number; computedVehicleTotal?: number };
+    if (typeof data.vehicleTotal !== "number" || typeof data.computedVehicleTotal !== "number") {
+      return null;
+    }
+    return data.vehicleTotal !== data.computedVehicleTotal ? data : null;
+  })();
+
   return (
     <>
       <PageHeader
@@ -147,9 +157,22 @@ export default async function BookingDetailPage({
                 <span className="text-body">
                   Location {booking.durationValue}{" "}
                   {unitLabel(booking.durationUnit, booking.durationValue)}
+                  {negotiated ? (
+                    <span className="ml-1 rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-semibold text-brand-text">
+                      tarif négocié
+                    </span>
+                  ) : null}
                 </span>
                 <span className="text-ink">{formatXPF(booking.vehicleTotal)}</span>
               </li>
+              {negotiated ? (
+                <li className="flex justify-between text-[12px]">
+                  <span className="text-muted">Prix calculé avant négociation</span>
+                  <span className="text-muted line-through">
+                    {formatXPF(negotiated.computedVehicleTotal ?? 0)}
+                  </span>
+                </li>
+              ) : null}
               {booking.extras.map((extra) => (
                 <li key={extra.id} className="flex justify-between">
                   <span className="text-body">{extra.name}</span>

@@ -50,6 +50,7 @@ export async function createBookingAction(
     unit: formData.get("unit"),
     value: formData.get("value"),
     isUnlimitedKilometers: formData.get("isUnlimitedKilometers"),
+    negotiatedTotal: formData.get("negotiatedTotal"),
     discountLabel: formData.get("discountLabel"),
     discountType: formData.get("discountType"),
     discountValue: formData.get("discountValue"),
@@ -190,10 +191,28 @@ export async function createBookingAction(
       discounts,
       tvaEnabled: context.settings?.tvaEnabled ?? false,
       taxRate: Number(context.settings?.defaultTaxRate ?? 0),
+      vehicleTotalOverride: d.negotiatedTotal,
     });
   } catch {
     return { status: "error", message: "Période de location invalide." };
   }
+
+  const negotiated = price.vehicleTotal !== price.computedVehicleTotal;
+  if (negotiated && !can(session, "booking.negotiate_rate")) {
+    return {
+      status: "error",
+      message: "Votre rôle ne permet pas de modifier le prix de la location.",
+    };
+  }
+
+  const negotiatedPayload = negotiated
+    ? {
+        vehicleTotal: price.vehicleTotal,
+        computedVehicleTotal: price.computedVehicleTotal,
+        negotiatedBy: session.userId,
+        negotiatedAt: new Date().toISOString(),
+      }
+    : null;
 
   // --- Écriture -------------------------------------------------------------
   const year = Number(d.startDate.slice(0, 4));
@@ -227,6 +246,7 @@ export async function createBookingAction(
             vehicleMonthlyRate: vehicle.monthlyRate,
             durationUnit: d.unit,
             durationValue: d.value,
+            negotiatedRates: negotiatedPayload ?? undefined,
             vehicleTotal: price.vehicleTotal,
             extrasTotal: price.extrasTotal,
             pickupLocationFee: pickupFee,
@@ -338,6 +358,7 @@ export async function updateBookingAction(
     unit: formData.get("unit"),
     value: formData.get("value"),
     isUnlimitedKilometers: formData.get("isUnlimitedKilometers"),
+    negotiatedTotal: formData.get("negotiatedTotal"),
     discountLabel: formData.get("discountLabel"),
     discountType: formData.get("discountType"),
     discountValue: formData.get("discountValue"),
@@ -455,9 +476,18 @@ export async function updateBookingAction(
       discounts,
       tvaEnabled: context.settings?.tvaEnabled ?? false,
       taxRate: Number(context.settings?.defaultTaxRate ?? 0),
+      vehicleTotalOverride: d.negotiatedTotal,
     });
   } catch {
     return { status: "error", message: "Période de location invalide." };
+  }
+
+  const negotiatedUpdate = price.vehicleTotal !== price.computedVehicleTotal;
+  if (negotiatedUpdate && !can(session, "booking.negotiate_rate")) {
+    return {
+      status: "error",
+      message: "Votre rôle ne peut pas modifier le prix de la location.",
+    };
   }
 
   await prisma.$transaction(async (tx) => {
@@ -481,6 +511,14 @@ export async function updateBookingAction(
         vehicleMonthlyRate: vehicle.monthlyRate,
         durationUnit: d.unit,
         durationValue: d.value,
+        negotiatedRates: negotiatedUpdate
+          ? {
+              vehicleTotal: price.vehicleTotal,
+              computedVehicleTotal: price.computedVehicleTotal,
+              negotiatedBy: session.userId,
+              negotiatedAt: new Date().toISOString(),
+            }
+          : undefined,
         vehicleTotal: price.vehicleTotal,
         extrasTotal: price.extrasTotal,
         pickupLocationFee: pickupFee,

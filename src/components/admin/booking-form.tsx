@@ -32,6 +32,7 @@ export type BookingFormOptions = {
   tvaEnabled: boolean;
   taxRate: number;
   toleranceHours: number;
+  canNegotiate: boolean;
 };
 
 const selectClass =
@@ -77,6 +78,7 @@ export type BookingInitial = {
   notes: string;
   internalNotes: string;
   isUnlimitedKilometers: boolean;
+  negotiatedTotal?: string;
 };
 
 export function BookingForm({
@@ -114,6 +116,11 @@ export function BookingForm({
   );
   const [discountValue, setDiscountValue] = useState(initial?.discountValue ?? "");
   const [unlimited, setUnlimited] = useState(initial?.isUnlimitedKilometers ?? true);
+  // Prix de location négocié : tant qu'il n'est pas touché, il suit le calcul.
+  const [negotiatedValue, setNegotiatedValue] = useState(initial?.negotiatedTotal ?? "");
+  const [negotiatedTouched, setNegotiatedTouched] = useState(
+    initial?.negotiatedTotal !== undefined && initial?.negotiatedTotal !== "",
+  );
 
   const vehicle = options.vehicles.find((v) => String(v.id) === vehicleId);
   const error = (name: string) => state.fieldErrors?.[name]?.[0];
@@ -163,6 +170,7 @@ export function BookingForm({
             : [],
         tvaEnabled: options.tvaEnabled,
         taxRate: options.taxRate,
+        vehicleTotalOverride: negotiatedTouched ? Number(negotiatedValue) || 0 : null,
       });
 
       return { days, suggestion, price };
@@ -172,6 +180,7 @@ export function BookingForm({
   }, [
     vehicle, startDate, startTime, endDate, endTime, unit, value, durationTouched,
     pickupId, dropoffId, selectedExtras, discountType, discountValue, options,
+    negotiatedTouched, negotiatedValue,
   ]);
 
   /** Aligne l'unité et la valeur sur la suggestion quand les dates changent. */
@@ -344,6 +353,51 @@ export function BookingForm({
                 </div>
               </fieldset>
             ) : null}
+
+            <div className="mt-4 border-t border-line pt-4">
+              <Field
+                label="Prix de la location"
+                htmlFor="negotiatedTotal"
+                hint={
+                  options.canNegotiate
+                    ? `Calculé : ${preview ? formatXPF(preview.price.computedVehicleTotal) : "—"}. Modifiable pour un tarif négocié (options et frais s'ajoutent ensuite).`
+                    : "Votre rôle ne permet pas de négocier le prix."
+                }
+                error={error("negotiatedTotal")}
+              >
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="negotiatedTotal"
+                    name="negotiatedTotal"
+                    inputMode="numeric"
+                    disabled={!options.canNegotiate}
+                    value={
+                      negotiatedTouched
+                        ? negotiatedValue
+                        : String(preview?.price.computedVehicleTotal ?? "")
+                    }
+                    onChange={(e) => {
+                      setNegotiatedValue(e.target.value);
+                      setNegotiatedTouched(true);
+                    }}
+                    className="max-w-[220px]"
+                  />
+                  <span className="text-[12px] text-muted">XPF</span>
+                  {negotiatedTouched && preview ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNegotiatedValue("");
+                        setNegotiatedTouched(false);
+                      }}
+                      className="text-[12px] font-medium text-brand-text hover:underline"
+                    >
+                      Revenir au prix calculé
+                    </button>
+                  ) : null}
+                </div>
+              </Field>
+            </div>
 
             <div className="mt-4 grid gap-4 border-t border-line pt-4 sm:grid-cols-3">
               <Field label="Remise" htmlFor="discountValue" error={error("discountValue")}>

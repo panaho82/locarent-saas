@@ -53,6 +53,14 @@ export const bookingSchema = z.object({
     .nullish()
     .transform((v) => v === "on" || v === "true"),
 
+  /** Montant de location fixé à la main (permission booking.negotiate_rate). */
+  negotiatedTotal: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((v) => (v && v.length > 0 ? Number(v) : null))
+    .refine((v) => v === null || (Number.isFinite(v) && v >= 0), "Montant invalide"),
+
   discountLabel: z.string().trim().max(120).nullish(),
   discountType: z.enum(["amount", "percent"]).nullish(),
   discountValue: z

@@ -191,6 +191,26 @@ describe("prix d'une réservation", () => {
     expect(sum).toBe(result.totalPrice);
   });
 
+  it("applique un montant de location négocié, options et frais en plus", () => {
+    const result = computePrice({
+      ...base,
+      vehicleTotalOverride: 11_000,
+      extras: [{ name: "GPS", unitPrice: 1500, priceType: "per_rental", qty: 1 }],
+      pickupFee: 500,
+    });
+
+    expect(result.computedVehicleTotal).toBe(13_260); // ce que le moteur aurait facturé
+    expect(result.vehicleTotal).toBe(11_000); // ce qui est appliqué
+    expect(result.totalPrice).toBe(11_000 + 1500 + 500);
+    expect(result.lines[0]?.label).toContain("tarif négocié");
+  });
+
+  it("n'affiche pas la mention « négocié » quand le montant est identique", () => {
+    const result = computePrice({ ...base, vehicleTotalOverride: 13_260 });
+    expect(result.vehicleTotal).toBe(13_260);
+    expect(result.lines[0]?.label).not.toContain("négocié");
+  });
+
   it("refuse une durée facturée nulle ou négative", () => {
     expect(() => computePrice({ ...base, value: 0 })).toThrow(RangeError);
     expect(() => computePrice({ ...base, value: -1 })).toThrow(RangeError);

@@ -56,6 +56,14 @@ export type PriceInput = {
   /** taux en pourcentage ; ignoré si `tvaEnabled` est faux */
   taxRate?: number;
   tvaEnabled?: boolean;
+  /**
+   * Montant de location négocié, qui remplace `durée × tarif`.
+   *
+   * C'est le seul prix que l'agent peut fixer à la main (permission
+   * `booking.negotiate_rate`) : les options, frais, remises et TVA continuent
+   * de s'appliquer par-dessus. `null` = prix calculé.
+   */
+  vehicleTotalOverride?: number | null;
 };
 
 export type PriceLine = {
@@ -68,6 +76,8 @@ export type PriceResult = {
   unit: BillingUnit;
   value: number;
   unitRate: number;
+  /** montant que la durée × tarif aurait donné, avant négociation */
+  computedVehicleTotal: number;
   vehicleTotal: number;
   extrasTotal: number;
   locationsTotal: number;
@@ -204,7 +214,11 @@ export function computePrice(input: PriceInput): PriceResult {
   }
 
   const unitRate = rateForUnit(input.rates, input.unit);
-  const vehicleTotal = money(input.value * unitRate);
+  const computedVehicleTotal = money(input.value * unitRate);
+  const vehicleTotal =
+    input.vehicleTotalOverride !== undefined && input.vehicleTotalOverride !== null
+      ? money(input.vehicleTotalOverride)
+      : computedVehicleTotal;
 
   const extras = input.extras ?? [];
   const extrasTotal = money(
@@ -235,7 +249,10 @@ export function computePrice(input: PriceInput): PriceResult {
 
   const lines: PriceLine[] = [
     {
-      label: `Location ${input.value} ${unitLabel(input.unit, input.value)}`,
+      label:
+        vehicleTotal !== computedVehicleTotal
+          ? `Location ${input.value} ${unitLabel(input.unit, input.value)} (tarif négocié)`
+          : `Location ${input.value} ${unitLabel(input.unit, input.value)}`,
       amount: vehicleTotal,
     },
   ];
@@ -273,6 +290,7 @@ export function computePrice(input: PriceInput): PriceResult {
     unit: input.unit,
     value: input.value,
     unitRate,
+    computedVehicleTotal,
     vehicleTotal,
     extrasTotal,
     locationsTotal,

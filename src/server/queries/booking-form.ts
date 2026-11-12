@@ -1,11 +1,14 @@
 import type { BookingFormOptions } from "@/components/admin/booking-form";
+
+/** Le droit de négocier dépend de la session : il est ajouté par la page. */
+export type BookingFormData = Omit<BookingFormOptions, "canNegotiate">;
 import { db } from "@/server/db";
 import { withTenant } from "@/server/tenant-context";
 
 /** Données de référence du formulaire de réservation. */
 export async function loadBookingFormOptions(
   tenantId: number,
-): Promise<BookingFormOptions> {
+): Promise<BookingFormData> {
   return withTenant(tenantId, async () => {
     const [customers, vehicles, locations, extras, settings] = await Promise.all([
       db.customer.findMany({
