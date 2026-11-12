@@ -72,6 +72,9 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
   const [dropoffId, setDropoffId] = useState("");
   const [unit, setUnit] = useState<"days" | "weeks" | "months">("days");
   const [value, setValue] = useState("1");
+  // Tant que l'agent n'a pas touché la durée, elle suit la suggestion : sans
+  // cela, une réservation de 3 jours restait facturée 1 jour par défaut.
+  const [durationTouched, setDurationTouched] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
   const [discountType, setDiscountType] = useState<"amount" | "percent">("amount");
   const [discountValue, setDiscountValue] = useState("");
@@ -93,10 +96,8 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
         monthly: vehicle.monthlyRate,
       };
       const suggestion = suggestBilling(days, rates);
-      const billingUnit = unit === suggestion.unit && Number(value) === suggestion.value
-        ? unit
-        : unit;
-      const billingValue = Number(value) || suggestion.value;
+      const billingUnit = durationTouched ? unit : suggestion.unit;
+      const billingValue = durationTouched ? Number(value) || suggestion.value : suggestion.value;
 
       const pickup = options.locations.find((l) => String(l.id) === pickupId);
       const dropoff = options.locations.find((l) => String(l.id) === dropoffId);
@@ -134,7 +135,7 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
       return null;
     }
   }, [
-    vehicle, startDate, startTime, endDate, endTime, unit, value,
+    vehicle, startDate, startTime, endDate, endTime, unit, value, durationTouched,
     pickupId, dropoffId, selectedExtras, discountType, discountValue, options,
   ]);
 
@@ -143,7 +144,14 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
     if (!preview) return;
     setUnit(preview.suggestion.unit);
     setValue(String(preview.suggestion.value));
+    setDurationTouched(true);
   };
+
+  // Valeur réellement utilisée : la saisie de l'agent, sinon la suggestion.
+  const effectiveUnit = durationTouched ? unit : (preview?.suggestion.unit ?? unit);
+  const effectiveValue = durationTouched
+    ? value
+    : String(preview?.suggestion.value ?? value);
 
   return (
     <div>
@@ -241,8 +249,11 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
               </Field>
 
               <Field label="Unité de facturation" htmlFor="unit" error={error("unit")}>
-                <select id="unit" name="unit" value={unit}
-                  onChange={(e) => setUnit(e.target.value as typeof unit)} className={selectClass}>
+                <select id="unit" name="unit" value={effectiveUnit}
+                  onChange={(e) => {
+                    setUnit(e.target.value as typeof unit);
+                    setDurationTouched(true);
+                  }} className={selectClass}>
                   <option value="days">Jours</option>
                   <option value="weeks">Semaines</option>
                   <option value="months">Mois</option>
@@ -256,8 +267,11 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
                 error={error("value")}
               >
                 <div className="flex gap-2">
-                  <Input id="value" name="value" inputMode="numeric" value={value}
-                    onChange={(e) => setValue(e.target.value)} />
+                  <Input id="value" name="value" inputMode="numeric" value={effectiveValue}
+                    onChange={(e) => {
+                      setValue(e.target.value);
+                      setDurationTouched(true);
+                    }} />
                   <Button type="button" variant="secondary" onClick={applySuggestion}>
                     Suggérer
                   </Button>

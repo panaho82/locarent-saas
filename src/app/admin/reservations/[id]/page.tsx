@@ -116,6 +116,13 @@ export default async function BookingDetailPage({
                 </div>
               ))}
             </dl>
+            {booking.durationUnit === "days" && booking.rentalDays > booking.durationValue ? (
+              <p className="mt-4 rounded-btn border border-warning/40 bg-warning/10 px-3 py-2 text-[12px] text-ink">
+                Facturé {booking.durationValue} jour{booking.durationValue > 1 ? "s" : ""} pour{" "}
+                {booking.rentalDays} jours réels : c&apos;est un choix commercial, vérifiez qu&apos;il
+                est voulu.
+              </p>
+            ) : null}
             {booking.notes ? (
               <p className="mt-4 border-t border-line pt-3 text-[13px] text-body">{booking.notes}</p>
             ) : null}
