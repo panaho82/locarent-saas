@@ -1,0 +1,212 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { AccessDenied, PageHeader } from "@/components/admin/ui";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/cn";
+import { formatDateOnly, formatXPF } from "@/lib/format";
+import { unitLabel } from "@/lib/pricing";
+import { BOOKING_STATUS_DOT, BOOKING_STATUS_LABELS } from "@/lib/validation/booking";
+import { can } from "@/server/auth/permissions";
+import { requireSession } from "@/server/auth/session-context";
+import { db } from "@/server/db";
+import { withTenant } from "@/server/tenant-context";
+import {
+  cancelBookingAction,
+  confirmBookingAction,
+} from "@/server/actions/bookings";
+
+export default async function BookingDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await requireSession();
+  const { id } = await params;
+  const bookingId = Number(id);
+  if (!Number.isInteger(bookingId)) notFound();
+
+  if (!can(session, "booking.view")) {
+    return (
+      <>
+        <PageHeader title="Réservation" breadcrumb={["Accueil", "Réservations"]} />
+        <AccessDenied />
+      </>
+    );
+  }
+
+  const booking = await withTenant(session.tenantId, () =>
+    db.booking.findFirst({
+      where: { id: bookingId },
+      include: {
+        customer: true,
+        vehicle: true,
+        pickupLocation: true,
+        dropoffLocation: true,
+        extras: true,
+        discountsList: true,
+      },
+    }),
+  );
+  if (!booking) notFound();
+
+  const customerName = [booking.customer.firstName, booking.customer.lastName]
+    .filter(Boolean)
+    .join(" ");
+
+  const discountsTotal = booking.discountsList.reduce((sum, d) => sum + d.amount, 0);
+
+  return (
+    <>
+      <PageHeader
+        title={booking.bookingNumber}
+        breadcrumb={["Accueil", "Réservations", booking.bookingNumber]}
+        actions={
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-[11px] font-medium text-ink">
+              <span
+                aria-hidden
+                className={cn("size-1.5 rounded-full", BOOKING_STATUS_DOT[booking.status])}
+              />
+              {BOOKING_STATUS_LABELS[booking.status]}
+            </span>
+            {booking.status === "pending" && can(session, "booking.confirm") ? (
+              <form action={confirmBookingAction}>
+                <input type="hidden" name="bookingId" value={booking.id} />
+                <Button type="submit" size="sm">Confirmer</Button>
+              </form>
+            ) : null}
+            {["pending", "confirmed"].includes(booking.status) && can(session, "booking.cancel") ? (
+              <form action={cancelBookingAction}>
+                <input type="hidden" name="bookingId" value={booking.id} />
+                <Button type="submit" size="sm" variant="secondary">Annuler</Button>
+              </form>
+            ) : null}
+          </div>
+        }
+      />
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <section className="rounded-card border border-line bg-surface p-5">
+            <h2 className="mb-4 text-sm font-semibold text-ink">Location</h2>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {[
+                ["Client", customerName || "—"],
+                ["Véhicule", `${booking.vehicle.name} · ${booking.vehicle.licensePlate}`],
+                [
+                  "Départ",
+                  `${formatDateOnly(booking.startDate)} à ${booking.startTime}${
+                    booking.pickupLocation ? ` · ${booking.pickupLocation.name}` : ""
+                  }`,
+                ],
+                [
+                  "Retour",
+                  `${formatDateOnly(booking.endDate)} à ${booking.endTime}${
+                    booking.dropoffLocation ? ` · ${booking.dropoffLocation.name}` : ""
+                  }`,
+                ],
+                ["Durée facturée", `${booking.durationValue} ${unitLabel(booking.durationUnit, booking.durationValue)}`],
+                ["Jours réels", String(booking.rentalDays)],
+                ["Kilométrage", booking.isUnlimitedKilometers ? "Illimité" : `${booking.baseKilometers ?? 0} km inclus`],
+                ["Source", booking.source === "online" ? "En ligne" : "Comptoir"],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-muted">{label}</dt>
+                  <dd className="mt-0.5 text-[13px] text-ink">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {booking.notes ? (
+              <p className="mt-4 border-t border-line pt-3 text-[13px] text-body">{booking.notes}</p>
+            ) : null}
+            {booking.internalNotes ? (
+              <p className="mt-2 text-[12px] text-muted">Interne : {booking.internalNotes}</p>
+            ) : null}
+          </section>
+
+          <section className="rounded-card border border-line bg-surface p-5">
+            <h2 className="mb-3 text-sm font-semibold text-ink">Détail de la facturation</h2>
+            <ul className="space-y-1.5 text-[13px]">
+              <li className="flex justify-between">
+                <span className="text-body">
+                  Location {booking.durationValue}{" "}
+                  {unitLabel(booking.durationUnit, booking.durationValue)}
+                </span>
+                <span className="text-ink">{formatXPF(booking.vehicleTotal)}</span>
+              </li>
+              {booking.extras.map((extra) => (
+                <li key={extra.id} className="flex justify-between">
+                  <span className="text-body">{extra.name}</span>
+                  <span className="text-ink">{formatXPF(extra.total)}</span>
+                </li>
+              ))}
+              {booking.pickupLocationFee > 0 ? (
+                <li className="flex justify-between">
+                  <span className="text-body">Frais de prise en charge</span>
+                  <span className="text-ink">{formatXPF(booking.pickupLocationFee)}</span>
+                </li>
+              ) : null}
+              {booking.dropoffLocationFee > 0 ? (
+                <li className="flex justify-between">
+                  <span className="text-body">Frais de restitution</span>
+                  <span className="text-ink">{formatXPF(booking.dropoffLocationFee)}</span>
+                </li>
+              ) : null}
+              {booking.discountsList.map((discount) => (
+                <li key={discount.id} className="flex justify-between">
+                  <span className="text-body">{discount.label ?? "Remise"}</span>
+                  <span className="text-success">−{formatXPF(discount.amount)}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-4 space-y-1 border-t border-line pt-3 text-[13px]">
+              <div className="flex justify-between">
+                <span className="text-body">Total HT</span>
+                <span className="font-medium text-ink">{formatXPF(booking.totalPrice)}</span>
+              </div>
+              {Number(booking.taxRate) > 0 ? (
+                <div className="flex justify-between">
+                  <span className="text-body">TVA {Number(booking.taxRate)} %</span>
+                  <span className="text-ink">{formatXPF(booking.taxAmount)}</span>
+                </div>
+              ) : null}
+              <div className="flex justify-between border-t border-line pt-2">
+                <span className="font-semibold text-ink">Total TTC</span>
+                <span className="text-lg font-bold text-ink">{formatXPF(booking.totalWithTax)}</span>
+              </div>
+              {discountsTotal > 0 ? (
+                <p className="text-[11px] text-muted">Dont {formatXPF(discountsTotal)} de remise.</p>
+              ) : null}
+            </div>
+          </section>
+        </div>
+
+        <aside className="space-y-4">
+          <section className="rounded-card border border-line bg-surface p-5">
+            <h2 className="mb-3 text-sm font-semibold text-ink">Client</h2>
+            <Link
+              href={`/admin/customers/${booking.customerId}`}
+              className="text-[13px] font-semibold text-ink hover:text-brand-text"
+            >
+              {customerName || "—"}
+            </Link>
+            <p className="mt-1 text-[12px] text-muted">{booking.customer.email ?? "—"}</p>
+            <p className="text-[12px] text-muted">
+              {[booking.customer.phoneCode, booking.customer.phone].filter(Boolean).join(" ") || "—"}
+            </p>
+          </section>
+
+          <section className="rounded-card border border-line bg-surface p-5">
+            <h2 className="mb-2 text-sm font-semibold text-ink">Suite du parcours</h2>
+            <p className="text-[12px] text-muted">
+              Le contrat, le check-in client et l&apos;état des lieux arrivent au lot 3.
+              En attendant, la réservation se gère ici : confirmation, annulation,
+              facturation à venir.
+            </p>
+          </section>
+        </aside>
+      </div>
+    </>
+  );
+}
