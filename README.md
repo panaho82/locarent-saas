@@ -118,10 +118,19 @@ docs/              specs d'analyse + schema.sql + plan des lots
 - [x] Calendrier mois
 - [x] Planning flotte en glisser-déposer, avec revérification serveur
 
-### Lot 3 — prochaine étape
+### Lot 3 — contrat et check-in
 
-Contrat PDF, check-in client par lien, signature, états des lieux photo et
-stockage des documents (S3).
+- [x] Stockage de fichiers (lecteur local, extension S3 prévue)
+- [x] Contrat imprimable n'affichant que le prix appliqué
+- [x] Check-in client par lien : photos permis et pièce d'identité, signature
+- [x] Contrat figé + empreinte SHA-256, IP et user-agent
+- [x] Notification de l'agence (transport Resend, console par défaut)
+- [ ] États des lieux photo (prochaine étape)
+
+### Lot 4 — prochaine étape
+
+États des lieux de départ et de retour, dommages sur le véhicule, photos
+horodatées, comparaison départ/retour.
 
 Vérifications : `pnpm test` (17 tests d'intégration) et `pnpm exec playwright test`
 (8 parcours réels sur le serveur standalone, dont un audit d'accessibilité axe

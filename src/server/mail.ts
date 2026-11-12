@@ -1,10 +1,11 @@
 /**
  * Envoi d'emails.
  *
- * Deux transports :
+ * Trois transports :
  *   · `console` (défaut) — écrit le message dans les logs. Aucun email ne part.
- *   · `smtp`              — à brancher au Lot 3 (Mailpit en local, Resend/Brevo
- *                           en production).
+ *   · `resend`            — API HTTP de Resend (production).
+ *   · `smtp`              — non implémenté : échoue explicitement plutôt que de
+ *                           perdre un message en silence.
  *
  * Le choix ne dépend **pas** de NODE_ENV : un build de production sans SMTP
  * configuré doit rester utilisable (et le dire), plutôt que de perdre
@@ -19,10 +20,12 @@ export type MailMessage = {
   text: string;
 };
 
-export type MailTransport = "console" | "smtp";
+export type MailTransport = "console" | "resend" | "smtp";
 
 export function mailTransport(): MailTransport {
-  return process.env.MAIL_TRANSPORT === "smtp" ? "smtp" : "console";
+  if (process.env.MAIL_TRANSPORT === "resend") return "resend";
+  if (process.env.MAIL_TRANSPORT === "smtp") return "smtp";
+  return "console";
 }
 
 /** Vrai tant qu'aucun email ne part réellement : les liens doivent être affichés. */
@@ -33,15 +36,42 @@ export function isConsoleTransport(): boolean {
 const FROM = process.env.MAIL_FROM ?? "Locarent <no-reply@locarent.test>";
 
 export async function sendMail(message: MailMessage): Promise<void> {
+  if (mailTransport() === "resend") {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error(
+        "MAIL_TRANSPORT=resend mais RESEND_API_KEY est absent : impossible d'envoyer un email.",
+      );
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM,
+        to: [message.to],
+        subject: message.subject,
+        text: message.text,
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new Error(`Resend a refusé l'envoi (${response.status}) : ${detail.slice(0, 300)}`);
+    }
+    return;
+  }
+
   if (mailTransport() === "smtp") {
     if (!process.env.SMTP_HOST) {
       throw new Error(
         "MAIL_TRANSPORT=smtp mais SMTP_HOST est absent : impossible d'envoyer un email.",
       );
     }
-    // Implémentation SMTP prévue au Lot 3.
     throw new Error(
-      "Transport SMTP non encore implémenté (prévu au Lot 3). Utiliser MAIL_TRANSPORT=console.",
+      "Transport SMTP non implémenté. Utiliser MAIL_TRANSPORT=resend (production) ou console.",
     );
   }
 

@@ -198,7 +198,35 @@ reconstruire.
 - Toute action sensible doit laisser une trace via `logActivity()`
   (`src/server/audit.ts`).
 
+## Contrat et check-in (Lot 3)
+
+- Le **contrat** est un HTML autonome (`src/lib/contract.ts`) servi par deux
+  routes : back-office (permission `contract.print`) et public par token.
+  ⚠️ Il n'affiche **que le prix appliqué** : jamais le prix catalogue, même
+  quand la location a été négociée. C'est vérifié par test.
+- Le **check-in** est public (`/check-in/{token}`) : le token UUID est la seule
+  autorisation, la page est en `noindex`.
+- L'envoi de photos passe par une **Route Handler**, pas une Server Action :
+  quatre photos dépassent la limite de corps des actions.
+- Le contrat signé est **figé** : HTML archivé + empreinte SHA-256 calculée sur
+  le document *sans sa propre ligne d'empreinte*, IP et user-agent conservés.
+
+## Stockage des fichiers
+
+`src/server/storage.ts` : lecteur disque local (`STORAGE_DIR`, volume Docker
+`storage-data`) et point d'extension S3. Les fichiers sont nommés par UUID et
+servis par `/api/files/{uuid}` — l'URL n'est pas devinable. Ne jamais servir une
+pièce d'identité depuis le dossier public de Next.
+
+## Emails
+
+`MAIL_TRANSPORT` : `console` (défaut, aucun envoi), `resend` (API HTTP, clé
+`RESEND_API_KEY`), `smtp` (non implémenté, échoue volontairement). Un échec
+d'envoi ne doit jamais faire échouer l'opération métier : il est journalisé
+(`booking.notification_failed`).
+
 ## Ce qui n'existe pas encore (ne pas supposer)
 
-Réservations, moteur de prix, planning, PDF de contrat, upload S3, PayZen,
-QR/mobile, écrans de facturation. Voir `docs/lot-0.md` pour la suite planifiée.
+États des lieux (le schéma est prêt : `inspections`, `inspection_photos`,
+`vehicle_damages`), PDF binaire côté serveur, upload S3, PayZen, QR/mobile,
+écrans de facturation. Voir `docs/lot-0.md` pour la suite planifiée.

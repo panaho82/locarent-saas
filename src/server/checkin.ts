@@ -5,6 +5,8 @@ import { loadContractForBooking } from "@/server/queries/contract";
 import { prisma } from "@/server/db";
 import { decodeDataUrl, saveFile, saveText } from "@/server/storage";
 import { logActivity } from "@/server/audit";
+import { notifyCheckIn } from "@/server/notifications";
+import { formatDateOnly } from "@/lib/format";
 
 /**
  * Check-in en ligne.
@@ -50,7 +52,11 @@ export async function performCheckIn(
 
   const booking = await prisma.booking.findUnique({
     where: { checkInToken: token },
-    include: { customer: true },
+    include: {
+      customer: true,
+      vehicle: { select: { name: true, licensePlate: true } },
+      tenant: { select: { id: true, name: true, email: true } },
+    },
   });
 
   if (!booking) return { ok: false, error: "Réservation introuvable." };
@@ -190,6 +196,25 @@ export async function performCheckIn(
     subjectType: "booking",
     subjectId: booking.id,
     properties: { signerName, contractHash: pdfHash, snapshot: snapshot.path },
+  });
+
+  // Prévenir l'agence. Un échec d'envoi ne remet pas en cause le check-in :
+  // le contrat est signé et archivé, seule la notification est à rejouer.
+  await notifyCheckIn(booking.tenantId, {
+    tenantName: booking.tenant.name,
+    agencyEmail: booking.tenant.email,
+    bookingNumber: booking.bookingNumber,
+    bookingId: booking.id,
+    customerName: [booking.customer.firstName, booking.customer.lastName]
+      .filter(Boolean)
+      .join(" "),
+    vehicleName: booking.vehicle.name,
+    licensePlate: booking.vehicle.licensePlate,
+    startDate: formatDateOnly(booking.startDate),
+    endDate: formatDateOnly(booking.endDate),
+    signerName,
+    signedAt,
+    contractHash: pdfHash,
   });
 
   return { ok: true };

@@ -128,6 +128,21 @@ test("le client fait son check-in et signe le contrat négocié", async ({ page 
   expect(saved!.contracts[0]!.signatureImagePath).toContain("signatures/");
   expect(saved!.documents).toHaveLength(4);
 
+  // L'agence a été prévenue : la trace d'audit le prouve, même en transport
+  // « console » (aucun email réel ne part sans clé Resend).
+  const notified = await prisma.activityLog.findFirst({
+    where: { tenantId: saved!.tenantId, action: "booking.notified", subjectId: bookingId },
+  });
+  expect(notified).not.toBeNull();
+  const properties = notified!.properties as {
+    recipient?: string;
+    transport?: string;
+    delivered?: boolean;
+  };
+  expect(properties.recipient).toContain("@");
+  expect(properties.transport).toBe("console");
+  expect(properties.delivered).toBe(false);
+
   // Le contrat signé contient la signature et l'empreinte.
   const signed = await page.request.get(`/check-in/${token}/contract`);
   const signedHtml = (await signed.text()).replace(/\u00a0/g, " ");
