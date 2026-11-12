@@ -14,7 +14,7 @@ import {
   type RateCard,
 } from "@/lib/pricing";
 import { formatXPF } from "@/lib/format";
-import { createBookingAction } from "@/server/actions/bookings";
+import { createBookingAction, updateBookingAction } from "@/server/actions/bookings";
 import { IDLE_ACTION_STATE } from "@/server/actions/types";
 
 export type BookingFormOptions = {
@@ -49,36 +49,71 @@ const FIELD_LABELS: Record<string, string> = {
   discountValue: "Remise",
 };
 
-function Submit() {
+function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? "Enregistrement…" : "Enregistrer la réservation"}
+      {pending ? "Enregistrement…" : label}
     </Button>
   );
 }
 
-export function BookingForm({ options }: { options: BookingFormOptions }) {
-  const [state, formAction] = useActionState(createBookingAction, IDLE_ACTION_STATE);
+export type BookingInitial = {
+  id: number;
+  customerId: string;
+  vehicleId: string;
+  pickupLocationId: string;
+  dropoffLocationId: string;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  unit: "days" | "weeks" | "months";
+  value: string;
+  extras: number[];
+  discountType: "amount" | "percent";
+  discountValue: string;
+  discountLabel: string;
+  notes: string;
+  internalNotes: string;
+  isUnlimitedKilometers: boolean;
+};
+
+export function BookingForm({
+  options,
+  mode = "create",
+  initial,
+}: {
+  options: BookingFormOptions;
+  mode?: "create" | "edit";
+  initial?: BookingInitial;
+}) {
+  const [state, formAction] = useActionState(
+    mode === "edit" ? updateBookingAction : createBookingAction,
+    IDLE_ACTION_STATE,
+  );
 
   const today = new Date().toISOString().slice(0, 10);
-  const [customerId, setCustomerId] = useState("");
-  const [vehicleId, setVehicleId] = useState("");
-  const [startDate, setStartDate] = useState(today);
-  const [startTime, setStartTime] = useState("08:00");
-  const [endDate, setEndDate] = useState(today);
-  const [endTime, setEndTime] = useState("18:00");
-  const [pickupId, setPickupId] = useState("");
-  const [dropoffId, setDropoffId] = useState("");
-  const [unit, setUnit] = useState<"days" | "weeks" | "months">("days");
-  const [value, setValue] = useState("1");
+  const [customerId, setCustomerId] = useState(initial?.customerId ?? "");
+  const [vehicleId, setVehicleId] = useState(initial?.vehicleId ?? "");
+  const [startDate, setStartDate] = useState(initial?.startDate ?? today);
+  const [startTime, setStartTime] = useState(initial?.startTime ?? "08:00");
+  const [endDate, setEndDate] = useState(initial?.endDate ?? today);
+  const [endTime, setEndTime] = useState(initial?.endTime ?? "18:00");
+  const [pickupId, setPickupId] = useState(initial?.pickupLocationId ?? "");
+  const [dropoffId, setDropoffId] = useState(initial?.dropoffLocationId ?? "");
+  const [unit, setUnit] = useState<"days" | "weeks" | "months">(initial?.unit ?? "days");
+  const [value, setValue] = useState(initial?.value ?? "1");
   // Tant que l'agent n'a pas touché la durée, elle suit la suggestion : sans
   // cela, une réservation de 3 jours restait facturée 1 jour par défaut.
-  const [durationTouched, setDurationTouched] = useState(false);
-  const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
-  const [discountType, setDiscountType] = useState<"amount" | "percent">("amount");
-  const [discountValue, setDiscountValue] = useState("");
-  const [unlimited, setUnlimited] = useState(true);
+  // En modification, la durée enregistrée fait foi.
+  const [durationTouched, setDurationTouched] = useState(mode === "edit");
+  const [selectedExtras, setSelectedExtras] = useState<number[]>(initial?.extras ?? []);
+  const [discountType, setDiscountType] = useState<"amount" | "percent">(
+    initial?.discountType ?? "amount",
+  );
+  const [discountValue, setDiscountValue] = useState(initial?.discountValue ?? "");
+  const [unlimited, setUnlimited] = useState(initial?.isUnlimitedKilometers ?? true);
 
   const vehicle = options.vehicles.find((v) => String(v.id) === vehicleId);
   const error = (name: string) => state.fieldErrors?.[name]?.[0];
@@ -156,7 +191,7 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
   return (
     <div>
       <Link
-        href="/admin/reservations"
+        href={mode === "edit" && initial ? `/admin/reservations/${initial.id}` : "/admin/reservations"}
         className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-body hover:text-ink"
       >
         <ArrowLeft className="size-3.5" aria-hidden />
@@ -165,6 +200,9 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <form action={formAction} noValidate className="lg:col-span-2">
+          {mode === "edit" && initial ? (
+            <input type="hidden" name="bookingId" value={initial.id} />
+          ) : null}
           <div className="rounded-card border border-line bg-surface p-5">
             {state.status !== "idle" ? (
               <div className="mb-4">
@@ -322,16 +360,16 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
                 </select>
               </Field>
               <Field label="Libellé de la remise" htmlFor="discountLabel">
-                <Input id="discountLabel" name="discountLabel" placeholder="Geste commercial" />
+                <Input id="discountLabel" name="discountLabel" defaultValue={initial?.discountLabel ?? ""} placeholder="Geste commercial" />
               </Field>
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label="Notes client" htmlFor="notes">
-                <Input id="notes" name="notes" />
+                <Input id="notes" name="notes" defaultValue={initial?.notes ?? ""} />
               </Field>
               <Field label="Notes internes" htmlFor="internalNotes">
-                <Input id="internalNotes" name="internalNotes" />
+                <Input id="internalNotes" name="internalNotes" defaultValue={initial?.internalNotes ?? ""} />
               </Field>
             </div>
 
@@ -350,10 +388,13 @@ export function BookingForm({ options }: { options: BookingFormOptions }) {
             </div>
 
             <div className="mt-5 flex justify-end gap-2 border-t border-line pt-4">
-              <Link href="/admin/reservations" className="text-[13px] text-body hover:text-ink">
+              <Link
+                href={mode === "edit" && initial ? `/admin/reservations/${initial.id}` : "/admin/reservations"}
+                className="text-[13px] text-body hover:text-ink"
+              >
                 Annuler
               </Link>
-              <Submit />
+              <Submit label={mode === "edit" ? "Enregistrer les modifications" : "Enregistrer la réservation"} />
             </div>
           </div>
         </form>

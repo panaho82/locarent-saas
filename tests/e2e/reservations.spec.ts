@@ -78,4 +78,13 @@ test("créer une réservation, vérifier le prix, refuser un chevauchement", asy
   await page.goto("/admin/reservations");
   await expect(page.getByText("B-2026-00001")).toBeVisible();
   await expect(page.getByText("13 260 XPF")).toBeVisible();
+
+  // Modification : 3 jours au lieu de 2, le prix est recalculé.
+  await page.getByRole("link", { name: "B-2026-00001", exact: true }).click();
+  await page.getByRole("link", { name: "Modifier" }).click();
+  await expect(page).toHaveURL(/\/admin\/reservations\/\d+\/edit$/);
+  await page.fill("#value", "3");
+  await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
+  await expect(page).toHaveURL(/\/admin\/reservations\/\d+$/, { timeout: 20000 });
+  await expect(page.getByText("19 890 XPF").first()).toBeVisible();
 });

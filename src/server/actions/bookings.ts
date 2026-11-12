@@ -303,6 +303,243 @@ export async function createBookingAction(
   redirect(`/admin/reservations/${bookingId}`);
 }
 
+
+/**
+ * Modification d'une réservation au comptoir.
+ *
+ * Le prix est recalculé avec les tarifs **actuels** du véhicule (une
+ * modification de dates ou d'options doit refléter le tarif du jour), puis les
+ * options et remises sont remplacées. La disponibilité est revérifiée en
+ * excluant la réservation elle-même.
+ */
+export async function updateBookingAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await requireSession();
+  if (!can(session, "booking.edit")) {
+    return { status: "error", message: "Votre rôle ne permet pas de modifier une réservation." };
+  }
+
+  const bookingId = Number(formData.get("bookingId"));
+  if (!Number.isInteger(bookingId) || bookingId <= 0) {
+    return { status: "error", message: "Réservation introuvable." };
+  }
+
+  const parsed = bookingSchema.safeParse({
+    customerId: formData.get("customerId"),
+    vehicleId: formData.get("vehicleId"),
+    pickupLocationId: formData.get("pickupLocationId"),
+    dropoffLocationId: formData.get("dropoffLocationId"),
+    startDate: formData.get("startDate"),
+    startTime: formData.get("startTime"),
+    endDate: formData.get("endDate"),
+    endTime: formData.get("endTime"),
+    unit: formData.get("unit"),
+    value: formData.get("value"),
+    isUnlimitedKilometers: formData.get("isUnlimitedKilometers"),
+    discountLabel: formData.get("discountLabel"),
+    discountType: formData.get("discountType"),
+    discountValue: formData.get("discountValue"),
+    notes: formData.get("notes"),
+    internalNotes: formData.get("internalNotes"),
+  });
+  if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error) };
+  const d = parsed.data;
+
+  const context = await withTenant(session.tenantId, async () => {
+    const [booking, vehicle, pickup, dropoff, settings] = await Promise.all([
+      db.booking.findFirst({ where: { id: bookingId }, select: { id: true, status: true } }),
+      db.vehicle.findFirst({
+        where: { id: d.vehicleId },
+        select: {
+          id: true,
+          name: true,
+          dailyRate: true,
+          weeklyRate: true,
+          monthlyRate: true,
+          baseKilometers: true,
+          extraKmPrice: true,
+        },
+      }),
+      d.pickupLocationId
+        ? db.location.findFirst({
+            where: { id: d.pickupLocationId },
+            select: { price: true, isFree: true },
+          })
+        : Promise.resolve(null),
+      d.dropoffLocationId
+        ? db.location.findFirst({
+            where: { id: d.dropoffLocationId },
+            select: { price: true, isFree: true },
+          })
+        : Promise.resolve(null),
+      db.settings.findFirst({
+        select: { tvaEnabled: true, defaultTaxRate: true, rentalToleranceHours: true },
+      }),
+    ]);
+
+    const extraIds = formData
+      .getAll("extras")
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value > 0);
+
+    const extras = extraIds.length
+      ? await db.extraService.findMany({
+          where: { id: { in: extraIds }, isActive: true },
+          select: { id: true, name: true, price: true, priceType: true },
+        })
+      : [];
+
+    return { booking, vehicle, pickup, dropoff, settings, extras };
+  });
+
+  if (!context.booking) return { status: "error", message: "Réservation introuvable." };
+  if (["completed", "cancelled", "declined"].includes(context.booking.status)) {
+    return { status: "error", message: "Cette réservation ne peut plus être modifiée." };
+  }
+
+  const vehicle = context.vehicle;
+  if (!vehicle) return { status: "error", message: "Véhicule introuvable." };
+
+  let conflicts;
+  try {
+    conflicts = await findVehicleConflicts(session.tenantId, d.vehicleId, d, 0, bookingId);
+  } catch {
+    return { status: "error", fieldErrors: { endDate: ["La date de retour doit suivre le départ."] } };
+  }
+
+  if (conflicts.length > 0) {
+    return {
+      status: "error",
+      message: `Véhicule indisponible sur cette période (réservation ${conflicts
+        .map((c) => c.bookingNumber)
+        .join(", ")}).`,
+    };
+  }
+
+  const pickupFee = context.pickup && !context.pickup.isFree ? (context.pickup.price ?? 0) : 0;
+  const dropoffFee =
+    context.dropoff && !context.dropoff.isFree && d.dropoffLocationId !== d.pickupLocationId
+      ? (context.dropoff.price ?? 0)
+      : 0;
+
+  const discounts =
+    d.discountValue > 0 && d.discountType
+      ? [{ label: d.discountLabel || null, type: d.discountType, value: d.discountValue }]
+      : [];
+
+  let price;
+  try {
+    price = computePrice({
+      startDate: d.startDate,
+      startTime: d.startTime,
+      endDate: d.endDate,
+      endTime: d.endTime,
+      toleranceHours: context.settings?.rentalToleranceHours ?? 0,
+      unit: d.unit,
+      value: d.value,
+      rates: {
+        daily: vehicle.dailyRate,
+        weekly: vehicle.weeklyRate,
+        monthly: vehicle.monthlyRate,
+      },
+      extras: context.extras.map((extra) => ({
+        name: extra.name,
+        unitPrice: extra.price,
+        priceType: extra.priceType,
+        qty: 1,
+      })),
+      pickupFee,
+      dropoffFee,
+      discounts,
+      tvaEnabled: context.settings?.tvaEnabled ?? false,
+      taxRate: Number(context.settings?.defaultTaxRate ?? 0),
+    });
+  } catch {
+    return { status: "error", message: "Période de location invalide." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.booking.update({
+      where: { id: bookingId },
+      data: {
+        customerId: d.customerId,
+        vehicleId: d.vehicleId,
+        pickupLocationId: d.pickupLocationId,
+        dropoffLocationId: d.dropoffLocationId,
+        startDate: new Date(`${d.startDate}T00:00:00Z`),
+        startTime: d.startTime,
+        endDate: new Date(`${d.endDate}T00:00:00Z`),
+        endTime: d.endTime,
+        rentalDays: price.rentalDays,
+        isUnlimitedKilometers: d.isUnlimitedKilometers,
+        baseKilometers: d.isUnlimitedKilometers ? null : vehicle.baseKilometers,
+        extraKmPrice: d.isUnlimitedKilometers ? null : vehicle.extraKmPrice,
+        vehicleDailyRate: vehicle.dailyRate,
+        vehicleWeeklyRate: vehicle.weeklyRate,
+        vehicleMonthlyRate: vehicle.monthlyRate,
+        durationUnit: d.unit,
+        durationValue: d.value,
+        vehicleTotal: price.vehicleTotal,
+        extrasTotal: price.extrasTotal,
+        pickupLocationFee: pickupFee,
+        dropoffLocationFee: dropoffFee,
+        grandTotal: price.totalPrice,
+        totalPrice: price.totalPrice,
+        taxRate: price.taxRate,
+        taxAmount: price.taxAmount,
+        totalWithTax: price.totalWithTax,
+        notes: d.notes ?? null,
+        internalNotes: d.internalNotes ?? null,
+      },
+    });
+
+    // Options et remises remplacées : ce sont des lignes figées, pas un stock.
+    await tx.bookingExtra.deleteMany({ where: { bookingId } });
+    for (const extra of context.extras) {
+      await tx.bookingExtra.create({
+        data: {
+          bookingId,
+          extraServiceId: extra.id,
+          name: extra.name,
+          unitPrice: extra.price,
+          priceType: extra.priceType,
+          qty: 1,
+          total: extra.price * (extra.priceType === "per_day" ? price.rentalDays : 1),
+        },
+      });
+    }
+
+    await tx.bookingDiscount.deleteMany({ where: { bookingId } });
+    for (const discount of discounts) {
+      await tx.bookingDiscount.create({
+        data: {
+          bookingId,
+          label: discount.label,
+          type: discount.type,
+          value: discount.value,
+          amount: price.discountsTotal,
+        },
+      });
+    }
+  });
+
+  await logActivity({
+    tenantId: session.tenantId,
+    userId: session.userId,
+    action: "booking.updated",
+    subjectType: "booking",
+    subjectId: bookingId,
+    properties: { total: price.totalPrice, days: price.rentalDays },
+  });
+
+  revalidatePath("/admin/reservations");
+  revalidatePath(`/admin/reservations/${bookingId}`);
+  revalidatePath("/admin/planning");
+  redirect(`/admin/reservations/${bookingId}`);
+}
+
 /** Change le statut d'une réservation. */
 async function setStatus(
   bookingId: number,

@@ -69,6 +69,15 @@ export default async function BookingDetailPage({
               />
               {BOOKING_STATUS_LABELS[booking.status]}
             </span>
+            {can(session, "booking.edit") &&
+            !["completed", "cancelled", "declined"].includes(booking.status) ? (
+              <Link
+                href={`/admin/reservations/${booking.id}/edit`}
+                className="rounded-btn border border-line px-3 py-1.5 text-[13px] font-medium text-ink hover:bg-app"
+              >
+                Modifier
+              </Link>
+            ) : null}
             {booking.status === "pending" && can(session, "booking.confirm") ? (
               <form action={confirmBookingAction}>
                 <input type="hidden" name="bookingId" value={booking.id} />
