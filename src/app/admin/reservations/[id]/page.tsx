@@ -49,6 +49,35 @@ export default async function BookingDetailPage({
   );
   if (!booking) notFound();
 
+  // Dernière tentative de notification de l'agence (contrat signé).
+  const notification = await withTenant(session.tenantId, () =>
+    db.activityLog.findFirst({
+      where: {
+        subjectType: "booking",
+        subjectId: bookingId,
+        action: { in: ["booking.notified", "booking.notification_failed"] },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { action: true, properties: true, createdAt: true },
+    }),
+  );
+
+  const notificationInfo = (() => {
+    if (!notification) return null;
+    const properties = notification.properties as {
+      recipient?: string;
+      delivered?: boolean;
+      error?: string;
+    } | null;
+    return {
+      failed: notification.action === "booking.notification_failed",
+      recipient: properties?.recipient ?? null,
+      delivered: properties?.delivered ?? false,
+      error: properties?.error ?? null,
+      at: notification.createdAt,
+    };
+  })();
+
   const customerName = [booking.customer.firstName, booking.customer.lastName]
     .filter(Boolean)
     .join(" ");
@@ -260,6 +289,15 @@ export default async function BookingDetailPage({
                 >
                   Ouvrir la page du client ↗
                 </a>
+                {notificationInfo ? (
+                  <p className="mt-3 border-t border-line pt-2 text-[11px] text-muted">
+                    {notificationInfo.failed
+                      ? `Notification en échec le ${formatDateTime(notificationInfo.at)} — ${notificationInfo.error ?? "erreur inconnue"}.`
+                      : notificationInfo.delivered
+                        ? `Agence prévenue le ${formatDateTime(notificationInfo.at)} (${notificationInfo.recipient}).`
+                        : `Notification journalisée le ${formatDateTime(notificationInfo.at)} — transport « console », aucun email réel n'est parti.`}
+                  </p>
+                ) : null}
               </>
             ) : (
               <>
