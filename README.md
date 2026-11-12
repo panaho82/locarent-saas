@@ -108,11 +108,20 @@ docs/              specs d'analyse + schema.sql + plan des lots
 - [x] Clients, conducteurs, entreprises clientes
 - [x] Maintenance (interventions, échéances, contrôle technique)
 
-### Lot 2 — prochaine session
+### Lot 2 — réservations et planning
 
-Réservations et planning : moteur de prix (jours/semaines/mois, options, frais,
-remises, TVA), détection de conflits, calendrier et planning flotte en
-glisser-déposer.
+- [x] Moteur de prix testé (jours/semaines/mois, options, frais de lieux,
+      remises, TVA, arrondis XPF) — 23 tests unitaires
+- [x] Disponibilité avec tampon de nettoyage
+- [x] Création et modification de réservation au comptoir, fiche détaillée
+- [x] Liste filtrable par statut, confirmation / annulation
+- [x] Calendrier mois
+- [x] Planning flotte en glisser-déposer, avec revérification serveur
+
+### Lot 3 — prochaine étape
+
+Contrat PDF, check-in client par lien, signature, états des lieux photo et
+stockage des documents (S3).
 
 Vérifications : `pnpm test` (17 tests d'intégration) et `pnpm exec playwright test`
 (8 parcours réels sur le serveur standalone, dont un audit d'accessibilité axe
