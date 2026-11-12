@@ -3,6 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Image autonome pour Docker / Dokploy (voir Dockerfile).
   output: "standalone",
+
+  // Le stockage des fichiers est lu dynamiquement (chemin non devinable) :
+  // sans cette exclusion, l'analyse de trace embarque tout le projet dans le
+  // build autonome.
+  outputFileTracingExcludes: {
+    "*": ["./.storage/**", "./_extract/**", "./tests/**", "./docs/**", "./_extract/**"],
+  },
   poweredByHeader: false,
 
   // Tailwind 4 est chargé par Turbopack (chemin officiel du template Next 16) :

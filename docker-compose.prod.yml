@@ -62,6 +62,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-locarent}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est requis}@postgres:5432/${POSTGRES_DB:-locarent}?schema=public
       APP_URL: ${APP_URL:?APP_URL est requis (URL publique, sert aux liens d'invitation)}
       AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET est requis (openssl rand -base64 48)}
+      STORAGE_DIR: /app/.storage
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-console}
       MAIL_FROM: ${MAIL_FROM:-Locarent <no-reply@locarent.test>}
       SMTP_HOST: ${SMTP_HOST:-}
@@ -74,6 +75,9 @@ services:
     # docker-compose.local.yml (override) qui ajoute le mapping.
     expose:
       - "3000"
+    volumes:
+      # Photos de permis, signatures et contrats figés : hors de l'image.
+      - storage-data:/app/.storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -105,4 +109,5 @@ services:
 
 volumes:
   postgres-data:
+  storage-data:
   # minio-data:

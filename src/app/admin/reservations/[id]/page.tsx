@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AccessDenied, PageHeader } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
-import { formatDateOnly, formatXPF } from "@/lib/format";
+import { formatDateOnly, formatDateTime, formatXPF } from "@/lib/format";
 import { unitLabel } from "@/lib/pricing";
 import { BOOKING_STATUS_DOT, BOOKING_STATUS_LABELS } from "@/lib/validation/booking";
 import { can } from "@/server/auth/permissions";
@@ -79,6 +79,14 @@ export default async function BookingDetailPage({
               />
               {BOOKING_STATUS_LABELS[booking.status]}
             </span>
+            <a
+              href={`/admin/reservations/${booking.id}/contract`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-btn border border-line px-3 py-1.5 text-[13px] font-medium text-ink hover:bg-app"
+            >
+              Contrat
+            </a>
             {can(session, "booking.edit") &&
             !["completed", "cancelled", "declined"].includes(booking.status) ? (
               <Link
@@ -237,12 +245,38 @@ export default async function BookingDetailPage({
           </section>
 
           <section className="rounded-card border border-line bg-surface p-5">
-            <h2 className="mb-2 text-sm font-semibold text-ink">Suite du parcours</h2>
-            <p className="text-[12px] text-muted">
-              Le contrat, le check-in client et l&apos;état des lieux arrivent au lot 3.
-              En attendant, la réservation se gère ici : confirmation, annulation,
-              facturation à venir.
-            </p>
+            <h2 className="mb-2 text-sm font-semibold text-ink">Check-in client</h2>
+            {booking.checkInCompletedAt ? (
+              <>
+                <p className="text-[12px] text-success">
+                  Signé le {formatDateTime(booking.checkInCompletedAt)}
+                  {booking.contractSignatureName ? ` par ${booking.contractSignatureName}` : ""}.
+                </p>
+                <a
+                  href={`/check-in/${booking.checkInToken}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block text-[12px] font-medium text-brand-text hover:underline"
+                >
+                  Ouvrir la page du client ↗
+                </a>
+              </>
+            ) : (
+              <>
+                <p className="text-[12px] text-muted">
+                  Envoyez ce lien au client : il photographiera son permis et sa pièce
+                  d&apos;identité, lira le contrat et le signera.
+                </p>
+                <a
+                  href={`/check-in/${booking.checkInToken}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block break-all rounded-btn border border-line bg-app px-2 py-1.5 text-[11px] text-ink hover:underline"
+                >
+                  /check-in/{booking.checkInToken}
+                </a>
+              </>
+            )}
           </section>
         </aside>
       </div>
